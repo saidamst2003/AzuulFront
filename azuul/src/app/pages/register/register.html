@@ -1,0 +1,101 @@
+<div class="register-container">
+  <div class="register-card">
+    <div class="register-header">
+      <div class="logo">
+        <i class="fas fa-paint-brush"></i>
+        <h1>AZUL</h1>
+      </div>
+      <h2>Inscription</h2>
+      <p>Créez votre compte AZUL</p>
+    </div>
+
+    <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="register-form">
+      <div class="form-group">
+        <label for="fullName">Nom complet</label>
+        <div class="input-wrapper">
+          <i class="fas fa-user"></i>
+          <input
+            type="text"
+            id="fullName"
+            formControlName="fullName"
+            placeholder="Entrez votre nom complet"
+            [class.error]="registerForm.get('fullName')?.invalid && registerForm.get('fullName')?.touched"
+          />
+        </div>
+        <div class="error-message" *ngIf="registerForm.get('fullName')?.invalid && registerForm.get('fullName')?.touched">
+          <span *ngIf="registerForm.get('fullName')?.errors?.['required']">Le nom complet est requis</span>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="email">Email</label>
+        <div class="input-wrapper">
+          <i class="fas fa-envelope"></i>
+          <input
+            type="email"
+            id="email"
+            formControlName="email"
+            placeholder="Entrez votre email"
+            [class.error]="registerForm.get('email')?.invalid && registerForm.get('email')?.touched"
+          />
+        </div>
+        <div class="error-message" *ngIf="registerForm.get('email')?.invalid && registerForm.get('email')?.touched">
+          <span *ngIf="registerForm.get('email')?.errors?.['required']">L'email est requis</span>
+          <span *ngIf="registerForm.get('email')?.errors?.['email']">Format d'email invalide</span>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="password">Mot de passe</label>
+        <div class="input-wrapper">
+          <i class="fas fa-lock"></i>
+          <input
+            type="password"
+            id="password"
+            formControlName="password"
+            placeholder="Entrez votre mot de passe"
+            [class.error]="registerForm.get('password')?.invalid && registerForm.get('password')?.touched"
+          />
+        </div>
+        <div class="error-message" *ngIf="registerForm.get('password')?.invalid && registerForm.get('password')?.touched">
+          <span *ngIf="registerForm.get('password')?.errors?.['required']">Le mot de passe est requis</span>
+          <span *ngIf="registerForm.get('password')?.errors?.['minlength']">Le mot de passe doit contenir au moins 6 caractères</span>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="role">Rôle</label>
+        <div class="input-wrapper">
+          <i class="fas fa-user-tag"></i>
+          <select
+            id="role"
+            formControlName="role"
+            [class.error]="registerForm.get('role')?.invalid && registerForm.get('role')?.touched"
+          >
+            <option value="CLIENT">Client</option>
+            <option value="ADMIN">Administrateur</option>
+          </select>
+        </div>
+        <div class="error-message" *ngIf="registerForm.get('role')?.invalid && registerForm.get('role')?.touched">
+          <span *ngIf="registerForm.get('role')?.errors?.['required']">Le rôle est requis</span>
+        </div>
+      </div>
+
+      <div class="success-message" *ngIf="successMessage">
+        {{ successMessage }}
+      </div>
+
+      <div class="error-message" *ngIf="errorMessage">
+        {{ errorMessage }}
+      </div>
+
+      <button type="submit" class="register-btn">
+        S'inscrire
+      </button>
+    </form>
+
+    <div class="register-footer">
+      <p>Déjà un compte ? <a routerLink="/login" class="link">Se connecter</a></p>
+    </div>
+  </div>
+</div>
