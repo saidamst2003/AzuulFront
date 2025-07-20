@@ -44,7 +44,17 @@ export class Login {
         error: (error) => {
           this.isLoading = false;
           console.error('Login error:', error);
-          this.errorMessage = error.error?.message || 'Une erreur est survenue lors de la connexion';
+          if (error.error) {
+            if (typeof error.error === 'string') {
+              this.errorMessage = error.error;
+            } else if (typeof error.error === 'object') {
+              this.errorMessage = Object.values(error.error).join(' | ');
+            } else {
+              this.errorMessage = 'Erreur inconnue lors de la connexion';
+            }
+          } else {
+            this.errorMessage = 'Une erreur est survenue lors de la connexion';
+          }
         }
       });
     } else {

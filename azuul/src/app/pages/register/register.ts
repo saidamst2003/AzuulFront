@@ -29,8 +29,11 @@ export class Register {
     this.successMessage = '';
     this.errorMessage = '';
     if (this.registerForm.valid) {
-             const userData = this.registerForm.value;
-       this.http.post(`http://localhost:8081/user/register`, userData)
+      const userData = this.registerForm.value;
+      const role = userData.role;
+      // On retire le rôle du body car il est dans l'URL
+      const { role: _, ...userDataSansRole } = userData;
+      this.http.post(`http://localhost:8081/user/register/${role}`, userDataSansRole)
         .subscribe({
           next: () => {
             this.successMessage = 'Inscription réussie !';
