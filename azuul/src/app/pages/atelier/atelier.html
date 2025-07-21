@@ -7,199 +7,34 @@
     </div>
 </section>
 
+<div *ngIf="isAdmin" class="admin-toolbar">
+  <button class="admin-action-btn" (click)="openCreateForm()">
+    <i class="fas fa-plus"></i> Créer un Atelier
+  </button>
+</div>
+
 <main class="main-container">
+    <div *ngIf="error" class="error-message global-error">{{ error }}</div>
+
     <div class="workshops-grid">
-        <div class="workshop-card">
+        <div *ngFor="let atelier of ateliers" class="workshop-card">
             <div class="workshop-image">
-                <img src="https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?ixlib=rb-4.0.3&auto=format&fit=crop&w=1740&q=80" alt="Peinture intuitive">
-            </div>
-            <div class="workshop-content">
-                <div class="workshop-badge">Art</div>
-                <div class="workshop-emoji">🎨</div>
-                <h3 class="workshop-title">Peinture intuitive</h3>
-                <p class="workshop-description">Libérez votre créativité à travers la peinture intuitive. Un voyage artistique guidé par vos émotions.</p>
-                <div class="workshop-footer">
-                    <div class="workshop-info">
-                        <span class="info-item">
-                            <i class="far fa-clock"></i>
-                            2h
-                        </span>
-                        <span class="info-item">
-                            <i class="fas fa-users"></i>
-                            10 max
-                        </span>
-                    </div>
-                    <a href="#" class="workshop-btn">
-                        Réserver
-                        <i class="fas fa-arrow-right"></i>
-                    </a>
+                <img [src]="'https://source.unsplash.com/random/400x300?art,workshop,' + atelier.id" [alt]="atelier.nom">
+                 <div *ngIf="isAdmin" class="admin-card-actions">
+                    <button class="icon-btn" (click)="openEditForm(atelier)"><i class="fas fa-edit"></i></button>
+                    <button class="icon-btn" (click)="deleteAtelier(atelier.id!)"><i class="fas fa-trash"></i></button>
                 </div>
             </div>
-        </div>
-
-        <div class="workshop-card">
-            <div class="workshop-image">
-                <img src="https://images.unsplash.com/photo-1545205597-3d9d02c29597?ixlib=rb-4.0.3&auto=format&fit=crop&w=1740&q=80" alt="Yoga doux">
-            </div>
             <div class="workshop-content">
-                <div class="workshop-badge">Bien-être</div>
-                <div class="workshop-emoji">🧘‍♀️</div>
-                <h3 class="workshop-title">Yoga doux & respiration</h3>
-                <p class="workshop-description">Une séance douce combinant postures de yoga et exercices de respiration pour se reconnecter à soi.</p>
+                <h3 class="workshop-title">{{ atelier.nom }}</h3>
+                <p class="workshop-description">{{ atelier.description }}</p>
                 <div class="workshop-footer">
                     <div class="workshop-info">
-                        <span class="info-item">
-                            <i class="far fa-clock"></i>
-                            1h30
-                        </span>
-                        <span class="info-item">
-                            <i class="fas fa-users"></i>
-                            12 max
-                        </span>
+                        <span class="info-item"><i class="far fa-calendar-alt"></i> {{ atelier.date | date: 'dd/MM/yyyy' }}</span>
+                        <span class="info-item"><i class="far fa-clock"></i> {{ atelier.heure }}</span>
                     </div>
                     <a href="#" class="workshop-btn">
-                        Réserver
-                        <i class="fas fa-arrow-right"></i>
-                    </a>
-                </div>
-            </div>
-        </div>
-
-        <div class="workshop-card">
-            <div class="workshop-image">
-                <img src="https://images.unsplash.com/photo-1607478900766-efe13248b125?ixlib=rb-4.0.3&auto=format&fit=crop&w=1740&q=80" alt="Atelier pâtisserie">
-            </div>
-            <div class="workshop-content">
-                <div class="workshop-badge">Cuisine</div>
-                <div class="workshop-emoji">🧁</div>
-                <h3 class="workshop-title">Atelier pâtisserie créative</h3>
-                <p class="workshop-description">Apprenez à créer des desserts aussi beaux que délicieux. Techniques de décoration et recettes originales.</p>
-                <div class="workshop-footer">
-                    <div class="workshop-info">
-                        <span class="info-item">
-                            <i class="far fa-clock"></i>
-                            3h
-                        </span>
-                        <span class="info-item">
-                            <i class="fas fa-users"></i>
-                            8 max
-                        </span>
-                    </div>
-                    <a href="#" class="workshop-btn">
-                        Réserver
-                        <i class="fas fa-arrow-right"></i>
-                    </a>
-                </div>
-            </div>
-        </div>
-
-        <div class="workshop-card">
-            <div class="workshop-image">
-                <img src="https://images.unsplash.com/photo-1596464716127-f2a82984de30?ixlib=rb-4.0.3&auto=format&fit=crop&w=1740&q=80" alt="Calligraphie">
-            </div>
-            <div class="workshop-content">
-                <div class="workshop-badge">Art</div>
-                <div class="workshop-emoji">✒️</div>
-                <h3 class="workshop-title">Calligraphie moderne</h3>
-                <p class="workshop-description">Découvrez l'art de la belle écriture. Initiation aux techniques de calligraphie contemporaine.</p>
-                <div class="workshop-footer">
-                    <div class="workshop-info">
-                        <span class="info-item">
-                            <i class="far fa-clock"></i>
-                            2h30
-                        </span>
-                        <span class="info-item">
-                            <i class="fas fa-users"></i>
-                            8 max
-                        </span>
-                    </div>
-                    <a href="#" class="workshop-btn">
-                        Réserver
-                        <i class="fas fa-arrow-right"></i>
-                    </a>
-                </div>
-            </div>
-        </div>
-
-        <div class="workshop-card">
-            <div class="workshop-image">
-                <img src="https://images.unsplash.com/photo-1615713170963-2595d2c721bb?ixlib=rb-4.0.3&auto=format&fit=crop&w=1740&q=80" alt="Macramé">
-            </div>
-            <div class="workshop-content">
-                <div class="workshop-badge">DIY</div>
-                <div class="workshop-emoji">🧶</div>
-                <h3 class="workshop-title">Initiation au macramé</h3>
-                <p class="workshop-description">Créez votre suspension murale en macramé. Apprentissage des nœuds de base et techniques de tissage.</p>
-                <div class="workshop-footer">
-                    <div class="workshop-info">
-                        <span class="info-item">
-                            <i class="far fa-clock"></i>
-                            2h30
-                        </span>
-                        <span class="info-item">
-                            <i class="fas fa-users"></i>
-                            6 max
-                        </span>
-                    </div>
-                    <a href="#" class="workshop-btn">
-                        Réserver
-                        <i class="fas fa-arrow-right"></i>
-                    </a>
-                </div>
-            </div>
-        </div>
-
-        <div class="workshop-card">
-            <div class="workshop-image">
-                <img src="https://images.unsplash.com/photo-1512820790803-83ca734da794?ixlib=rb-4.0.3&auto=format&fit=crop&w=1740&q=80" alt="Heure du conte">
-            </div>
-            <div class="workshop-content">
-                <div class="workshop-badge">Enfants</div>
-                <div class="workshop-emoji">📚</div>
-                <h3 class="workshop-title">Heure du conte & coloriage</h3>
-                <p class="workshop-description">Pour les enfants avec un moment calme et ludique. Une pause enchantée entre histoires et créativité.</p>
-                <div class="workshop-footer">
-                    <div class="workshop-info">
-                        <span class="info-item">
-                            <i class="far fa-clock"></i>
-                            1h
-                        </span>
-                        <span class="info-item">
-                            <i class="fas fa-users"></i>
-                            12 max
-                        </span>
-                    </div>
-                    <a href="#" class="workshop-btn">
-                        Réserver
-                        <i class="fas fa-arrow-right"></i>
-                    </a>
-                </div>
-            </div>
-        </div>
-
-        <div class="workshop-card">
-            <div class="workshop-image">
-                <img src="https://images.unsplash.com/photo-1588075592446-265fd1e6e76f?ixlib=rb-4.0.3&auto=format&fit=crop&w=1740&q=80" alt="Théâtre d'impro">
-            </div>
-            <div class="workshop-content">
-                <div class="workshop-badge">Expression</div>
-                <div class="workshop-emoji">🎭</div>
-                <h3 class="workshop-title">Théâtre d'impro pour enfants</h3>
-                <p class="workshop-description">Jeux de rôle et d'expression corporelle. Un espace ludique pour développer la confiance en soi.</p>
-                <div class="workshop-footer">
-                    <div class="workshop-info">
-                        <span class="info-item">
-                            <i class="far fa-clock"></i>
-                            1h30
-                        </span>
-                        <span class="info-item">
-                            <i class="fas fa-users"></i>
-                            8 max
-                        </span>
-                    </div>
-                    <a href="#" class="workshop-btn">
-                        Réserver
-                        <i class="fas fa-arrow-right"></i>
+                        Réserver <i class="fas fa-arrow-right"></i>
                     </a>
                 </div>
             </div>
@@ -207,7 +42,40 @@
     </div>
 </main>
 
-<footer>
-    <!-- Existing footer content -->
-</footer>
+<div *ngIf="showForm" class="modal-backdrop">
+  <div class="modal-content">
+    <form [formGroup]="atelierForm" (ngSubmit)="submitForm()" novalidate>
+      <h3 class="modal-title">{{ editingAtelier ? 'Modifier' : 'Créer' }} un Atelier</h3>
+      
+      <div class="form-group">
+        <label for="nom">Nom</label>
+        <input id="nom" type="text" formControlName="nom" required>
+      </div>
+      
+      <div class="form-group">
+        <label for="description">Description</label>
+        <textarea id="description" formControlName="description" rows="3" required></textarea>
+      </div>
+      
+      <div class="form-row">
+        <div class="form-group">
+          <label for="date">Date</label>
+          <input id="date" type="date" formControlName="date" required>
+        </div>
+        <div class="form-group">
+          <label for="heure">Heure</label>
+          <input id="heure" type="time" formControlName="heure" required>
+        </div>
+      </div>
+      
+      <div class="modal-actions">
+        <button type="submit" class="btn-submit" [disabled]="!atelierForm.valid">
+          {{ editingAtelier ? 'Enregistrer' : 'Créer' }}
+        </button>
+        <button type="button" class="btn-cancel" (click)="cancel()">Annuler</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <app-footer></app-footer>
