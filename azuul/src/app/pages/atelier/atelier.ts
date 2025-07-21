@@ -14,7 +14,7 @@ import { User } from '../../models/user.model';
   templateUrl: './atelier.html',
   styleUrl: './atelier.css'
 })
-export class Atelier implements OnInit {
+export class atelier implements OnInit {
   ateliers: Atelier[] = [];
   atelierForm: FormGroup;
   editingAtelier: Atelier | null = null;
@@ -36,9 +36,13 @@ export class Atelier implements OnInit {
   }
 
   ngOnInit() {
-    this.loadAteliers();
-    this.authService.user$.subscribe((user: User | null) => {
-      this.isAdmin = !!user && user.role === 'ADMIN';
+    this.authService.isAuthenticated$.subscribe(isAuthenticated => {
+      if (isAuthenticated) {
+        this.loadAteliers();
+        this.authService.user$.subscribe((user: User | null) => {
+          this.isAdmin = !!user && user.role === 'ADMIN';
+        });
+      }
     });
   }
 

@@ -6,6 +6,7 @@ export interface Atelier {
   id?: number;
   nom: string;
   description: string;
+  genre: string;
   date: string;
   heure: string;
   coach?: any;
@@ -26,8 +27,11 @@ export class AtelierService {
     return this.http.get<Atelier>(`${this.apiUrl}/${id}`);
   }
 
-  createAtelier(atelier: Atelier): Observable<Atelier> {
-    return this.http.post<Atelier>(this.apiUrl, atelier);
+  createAtelier(atelier: Atelier, file: File): Observable<Atelier> {
+    const formData = new FormData();
+    formData.append('atelier', new Blob([JSON.stringify(atelier)], { type: 'application/json' }));
+    formData.append('file', file);
+    return this.http.post<Atelier>(this.apiUrl, formData);
   }
 
   updateAtelier(id: number, atelier: Atelier): Observable<Atelier> {
