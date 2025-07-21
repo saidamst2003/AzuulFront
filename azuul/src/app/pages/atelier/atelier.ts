@@ -17,6 +17,7 @@ import { User } from '../../models/user.model';
 export class atelier implements OnInit {
   ateliers: Atelier[] = [];
   atelierForm: FormGroup;
+  selectedFile: File | null = null;
   editingAtelier: Atelier | null = null;
   showForm = false;
   error = '';
@@ -30,9 +31,14 @@ export class atelier implements OnInit {
     this.atelierForm = this.fb.group({
       nom: ['', Validators.required],
       description: ['', Validators.required],
+      genre: ['', Validators.required],
       date: ['', Validators.required],
       heure: ['', Validators.required]
     });
+  }
+
+  onFileSelected(event: any) {
+    this.selectedFile = event.target.files[0];
   }
 
   ngOnInit() {
@@ -71,17 +77,29 @@ export class atelier implements OnInit {
       return;
     }
 
-    const action = this.editingAtelier
-      ? this.atelierService.updateAtelier(this.editingAtelier.id!, this.atelierForm.value)
-      : this.atelierService.createAtelier(this.atelierForm.value);
-
-    action.subscribe({
-      next: () => {
-        this.loadAteliers();
-        this.cancel();
-      },
-      error: (err) => this.error = `Erreur lors de ${this.editingAtelier ? 'la modification' : 'la création'}.`
-    });
+    if (this.editingAtelier) {
+      // Logic for updating (without changing the photo for now)
+      this.atelierService.updateAtelier(this.editingAtelier.id!, this.atelierForm.value).subscribe({
+        next: () => {
+          this.loadAteliers();
+          this.cancel();
+        },
+        error: (err) => this.error = `Erreur lors de la modification.`
+      });
+    } else {
+      // Logic for creating
+      if (!this.selectedFile) {
+        this.error = 'Veuillez sélectionner une photo.';
+        return;
+      }
+      this.atelierService.createAtelier(this.atelierForm.value, this.selectedFile).subscribe({
+        next: () => {
+          this.loadAteliers();
+          this.cancel();
+        },
+        error: (err) => this.error = `Erreur lors de la création.`
+      });
+    }
   }
 
   deleteAtelier(id: number) {
