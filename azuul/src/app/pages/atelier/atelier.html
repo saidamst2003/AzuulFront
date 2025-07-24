@@ -19,8 +19,11 @@
     <div class="workshops-grid">
         <div *ngFor="let atelier of ateliers" class="workshop-card">
             <div class="workshop-image">
-                <img [src]="'https://source.unsplash.com/random/400x300?art,workshop,' + atelier.id" [alt]="atelier.nom">
-                 <div *ngIf="isAdmin" class="admin-card-actions">
+                <ng-container *ngIf="atelier.photo">
+                    <img [src]="'http://localhost:8081' + atelier.photo" [alt]="atelier.nom" (error)="onImgError($event)">
+                </ng-container>
+               
+                <div *ngIf="isAdmin" class="admin-card-actions">
                     <button class="icon-btn" (click)="openEditForm(atelier)"><i class="fas fa-edit"></i></button>
                     <button class="icon-btn" (click)="deleteAtelier(atelier.id!)"><i class="fas fa-trash"></i></button>
                 </div>
@@ -49,30 +52,33 @@
       
       <div class="form-group">
         <label for="nom">Nom</label>
-        <input id="nom" type="text" formControlName="nom" required>
+        <input id="nom" name="nom" type="text" formControlName="nom" required>
       </div>
       
       <div class="form-group">
         <label for="description">Description</label>
-        <input type="text" formControlName="description" class="form-control" placeholder="Description">
+        <input id="description" name="description" type="text" formControlName="description" class="form-control" placeholder="Description">
       </div>
       <div class="form-group">
         <label for="genre">Genre</label>
-        <input type="text" formControlName="genre" class="form-control" placeholder="Genre">
+        <input id="genre" name="genre" type="text" formControlName="genre" class="form-control" placeholder="Genre">
       </div>
       
       <div class="form-row">
         <div class="form-group">
           <label for="date">Date</label>
-          <input id="date" type="date" formControlName="date" required>
+          <input id="date" name="date" type="date" formControlName="date" required>
         </div>
         <div class="form-group">
           <label for="heure">Heure</label>
-          <input id="heure" type="time" formControlName="heure" required>
+          <input id="heure" name="heure" type="time" formControlName="heure" required>
         </div>
         <div class="form-group" *ngIf="!editingAtelier">
           <label for="photo">Photo:</label>
-          <input type="file" (change)="onFileSelected($event)" class="form-control-file">
+          <input id="photo" name="photo" type="file" (change)="onFileSelected($event)" class="form-control-file">
+          <div *ngIf="imagePreview" class="image-preview-container">
+            <img [src]="imagePreview" alt="Aperçu de l'image" class="image-preview" style="max-width: 200px; margin-top: 10px;" />
+          </div>
         </div>
       </div>
       

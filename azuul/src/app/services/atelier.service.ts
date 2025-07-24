@@ -11,6 +11,13 @@ export interface Atelier {
   heure: string;
   coach?: any;
   admin?: any;
+  photo?: string;
+}
+
+export interface Image {
+  id: string;
+  name: string;
+  url: string;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -40,5 +47,9 @@ export class AtelierService {
 
   deleteAtelier(id: number): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${id}`);
+  }
+
+  getImages(): Observable<Image[]> {
+    return this.http.get<Image[]>('http://localhost:8081/images');
   }
 } 

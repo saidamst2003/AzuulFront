@@ -18,6 +18,7 @@ export class atelier implements OnInit {
   ateliers: Atelier[] = [];
   atelierForm: FormGroup;
   selectedFile: File | null = null;
+  imagePreview: string | ArrayBuffer | null = null;
   editingAtelier: Atelier | null = null;
   showForm = false;
   error = '';
@@ -39,6 +40,19 @@ export class atelier implements OnInit {
 
   onFileSelected(event: any) {
     this.selectedFile = event.target.files[0];
+    if (this.selectedFile) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        this.imagePreview = reader.result;
+      };
+      reader.readAsDataURL(this.selectedFile);
+    } else {
+      this.imagePreview = null;
+    }
+  }
+
+  onImgError(event: any) {
+    event.target.src = 'assets/default-image.jpg';
   }
 
   ngOnInit() {
@@ -62,6 +76,8 @@ export class atelier implements OnInit {
   openCreateForm() {
     this.editingAtelier = null;
     this.atelierForm.reset();
+    this.selectedFile = null;
+    this.imagePreview = null;
     this.showForm = true;
   }
 
@@ -115,6 +131,8 @@ export class atelier implements OnInit {
     this.showForm = false;
     this.editingAtelier = null;
     this.atelierForm.reset();
+    this.selectedFile = null;
+    this.imagePreview = null;
     this.error = '';
   }
 }
