@@ -1,31 +1,32 @@
-// 3. interceptors/auth.interceptor.ts
 import { HttpInterceptorFn } from '@angular/common/http';
-import { inject } from '@angular/core';
-import {AuthService} from '../services/auth';
-
 
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
-  const authService = inject(AuthService);
-  const token = authService.getToken();
-  console.log(`Interceptor for URL: ${req.url}, Token: ${token}`);
+  const token = typeof localStorage !== 'undefined' ? localStorage.getItem('token') : null;
+  console.log(`Interceptor for URL: ${req.url}, Token: ${token ? 'Present' : 'Missing'}`);
 
-  // Do not add token for public endpoints
-  if (req.url.includes('/user/register') ||
-      req.url.includes('/user/login') ||
-      req.url.includes('/user/roles')) {
+  // Endpoints publics qu'on ne protège pas par token
+  if (
+    req.url.includes('/user/register') ||
+    req.url.includes('/user/login') ||
+    req.url.includes('/user/roles') ||
+    req.url.includes('/upload')
+  ) {
     console.log(`Skipping token for public endpoint: ${req.url}`);
     return next(req);
   }
 
-
+  // Si token existe, on l'ajoute au header
   if (token) {
     const authReq = req.clone({
       setHeaders: {
         Authorization: `Bearer ${token}`
       }
     });
+    console.log(`Adding Authorization header for: ${req.url}`);
     return next(authReq);
   }
 
+  // Pour les endpoints protégés sans token, on laisse passer mais on log
+  console.log(`No token available for protected endpoint: ${req.url}`);
   return next(req);
 };

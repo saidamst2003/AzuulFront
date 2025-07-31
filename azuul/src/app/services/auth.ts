@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable, BehaviorSubject, tap } from 'rxjs';
 import { LoginRequest, User } from '../models/user.model';
 import { jwtDecode } from 'jwt-decode';
@@ -9,9 +9,10 @@ import { Router } from '@angular/router';
   providedIn: 'root'
 })
 export class AuthService {
+  [x: string]: any;
   private http = inject(HttpClient);
   private apiUrl = 'http://localhost:8081';
-  private tokenKey = 'token'; // Use a consistent key, e.g., 'token'
+  private tokenKey = 'token';
 
   private _user = new BehaviorSubject<User | null>(null);
   public user$ = this._user.asObservable();
@@ -35,7 +36,13 @@ export class AuthService {
   }
 
   login(loginRequest: LoginRequest): Observable<any> {
-    return this.http.post<any>(`${this.apiUrl}/user/login`, loginRequest).pipe(
+    const headers = new HttpHeaders({ 'Content-Type': 'application/json' });
+
+    return this.http.post<any>(
+      `${this.apiUrl}/user/login`,
+      loginRequest,
+      { headers }
+    ).pipe(
       tap(response => {
         if (response && response.token) {
           if (this.isBrowser()) {
@@ -49,6 +56,7 @@ export class AuthService {
       })
     );
   }
+
   register(registerRequest: any, role: string = 'APPRENANT') {
     return this.http.post(`${this.apiUrl}/user/register/${role}`, registerRequest);
   }
@@ -96,7 +104,7 @@ export class AuthService {
       expirationDate.setUTCSeconds(decoded.exp);
       return expirationDate.valueOf() < new Date().valueOf();
     } catch (error) {
-      return true; // If token is invalid, treat as expired
+      return true;
     }
   }
 

@@ -1,213 +1,215 @@
 <app-navbar></app-navbar>
 
+<!-- Toast Notifications -->
+<div class="toast-container">
+  <div *ngFor="let toast of toasts" 
+       class="toast" 
+       [class]="'toast-' + toast.type"
+       (click)="closeToast(toast)">
+    <span class="toast-message">{{ toast.message }}</span>
+    <button class="toast-close" (click)="closeToast(toast)">×</button>
+  </div>
+</div>
+
 <section class="hero-section">
-    <div class="hero-content">
-        <h1>Nos Ateliers Créatifs</h1>
-        <p>Découvrez nos ateliers uniques où créativité et bien-être se rencontrent pour des moments inoubliables</p>
-    </div>
+  <div class="hero-content">
+    <h1>Nos Ateliers Créatifs</h1>
+    <p>Découvrez nos ateliers uniques où créativité et bien-être se rencontrent pour des moments inoubliables</p>
+  </div>
 </section>
 
+<!-- Barre d'actions admin -->
+<div *ngIf="isAdmin" class="admin-toolbar">
+  <button class="admin-action-btn" (click)="openCreateForm()">
+    <i class="fas fa-plus"></i> Créer un Atelier
+  </button>
+</div>
+
+<!-- Authentication Warning -->
+<div *ngIf="!isAuthenticated" class="auth-warning">
+  <i class="fas fa-info-circle"></i>
+  <span>Connectez-vous pour accéder à toutes les fonctionnalités</span>
+  <button class="login-btn" (click)="navigateToLogin()">Se connecter</button>
+</div>
+
 <main class="main-container">
-    <div class="workshops-grid">
-        <div class="workshop-card">
-            <div class="workshop-image">
-                <img src="https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?ixlib=rb-4.0.3&auto=format&fit=crop&w=1740&q=80" alt="Peinture intuitive">
-            </div>
-            <div class="workshop-content">
-                <div class="workshop-badge">Art</div>
-                <div class="workshop-emoji">🎨</div>
-                <h3 class="workshop-title">Peinture intuitive</h3>
-                <p class="workshop-description">Libérez votre créativité à travers la peinture intuitive. Un voyage artistique guidé par vos émotions.</p>
-                <div class="workshop-footer">
-                    <div class="workshop-info">
-                        <span class="info-item">
-                            <i class="far fa-clock"></i>
-                            2h
-                        </span>
-                        <span class="info-item">
-                            <i class="fas fa-users"></i>
-                            10 max
-                        </span>
-                    </div>
-                    <a href="#" class="workshop-btn">
-                        Réserver
-                        <i class="fas fa-arrow-right"></i>
-                    </a>
-                </div>
-            </div>
-        </div>
 
-        <div class="workshop-card">
-            <div class="workshop-image">
-                <img src="https://images.unsplash.com/photo-1545205597-3d9d02c29597?ixlib=rb-4.0.3&auto=format&fit=crop&w=1740&q=80" alt="Yoga doux">
-            </div>
-            <div class="workshop-content">
-                <div class="workshop-badge">Bien-être</div>
-                <div class="workshop-emoji">🧘‍♀️</div>
-                <h3 class="workshop-title">Yoga doux & respiration</h3>
-                <p class="workshop-description">Une séance douce combinant postures de yoga et exercices de respiration pour se reconnecter à soi.</p>
-                <div class="workshop-footer">
-                    <div class="workshop-info">
-                        <span class="info-item">
-                            <i class="far fa-clock"></i>
-                            1h30
-                        </span>
-                        <span class="info-item">
-                            <i class="fas fa-users"></i>
-                            12 max
-                        </span>
-                    </div>
-                    <a href="#" class="workshop-btn">
-                        Réserver
-                        <i class="fas fa-arrow-right"></i>
-                    </a>
-                </div>
-            </div>
-        </div>
+  <!-- Message d'erreur globale -->
+  <div *ngIf="error" class="error-message global-error">{{ error }}</div>
 
-        <div class="workshop-card">
-            <div class="workshop-image">
-                <img src="https://images.unsplash.com/photo-1607478900766-efe13248b125?ixlib=rb-4.0.3&auto=format&fit=crop&w=1740&q=80" alt="Atelier pâtisserie">
-            </div>
-            <div class="workshop-content">
-                <div class="workshop-badge">Cuisine</div>
-                <div class="workshop-emoji">🧁</div>
-                <h3 class="workshop-title">Atelier pâtisserie créative</h3>
-                <p class="workshop-description">Apprenez à créer des desserts aussi beaux que délicieux. Techniques de décoration et recettes originales.</p>
-                <div class="workshop-footer">
-                    <div class="workshop-info">
-                        <span class="info-item">
-                            <i class="far fa-clock"></i>
-                            3h
-                        </span>
-                        <span class="info-item">
-                            <i class="fas fa-users"></i>
-                            8 max
-                        </span>
-                    </div>
-                    <a href="#" class="workshop-btn">
-                        Réserver
-                        <i class="fas fa-arrow-right"></i>
-                    </a>
-                </div>
-            </div>
-        </div>
-
-        <div class="workshop-card">
-            <div class="workshop-image">
-                <img src="https://images.unsplash.com/photo-1596464716127-f2a82984de30?ixlib=rb-4.0.3&auto=format&fit=crop&w=1740&q=80" alt="Calligraphie">
-            </div>
-            <div class="workshop-content">
-                <div class="workshop-badge">Art</div>
-                <div class="workshop-emoji">✒️</div>
-                <h3 class="workshop-title">Calligraphie moderne</h3>
-                <p class="workshop-description">Découvrez l'art de la belle écriture. Initiation aux techniques de calligraphie contemporaine.</p>
-                <div class="workshop-footer">
-                    <div class="workshop-info">
-                        <span class="info-item">
-                            <i class="far fa-clock"></i>
-                            2h30
-                        </span>
-                        <span class="info-item">
-                            <i class="fas fa-users"></i>
-                            8 max
-                        </span>
-                    </div>
-                    <a href="#" class="workshop-btn">
-                        Réserver
-                        <i class="fas fa-arrow-right"></i>
-                    </a>
-                </div>
-            </div>
-        </div>
-
-        <div class="workshop-card">
-            <div class="workshop-image">
-                <img src="https://images.unsplash.com/photo-1615713170963-2595d2c721bb?ixlib=rb-4.0.3&auto=format&fit=crop&w=1740&q=80" alt="Macramé">
-            </div>
-            <div class="workshop-content">
-                <div class="workshop-badge">DIY</div>
-                <div class="workshop-emoji">🧶</div>
-                <h3 class="workshop-title">Initiation au macramé</h3>
-                <p class="workshop-description">Créez votre suspension murale en macramé. Apprentissage des nœuds de base et techniques de tissage.</p>
-                <div class="workshop-footer">
-                    <div class="workshop-info">
-                        <span class="info-item">
-                            <i class="far fa-clock"></i>
-                            2h30
-                        </span>
-                        <span class="info-item">
-                            <i class="fas fa-users"></i>
-                            6 max
-                        </span>
-                    </div>
-                    <a href="#" class="workshop-btn">
-                        Réserver
-                        <i class="fas fa-arrow-right"></i>
-                    </a>
-                </div>
-            </div>
-        </div>
-
-        <div class="workshop-card">
-            <div class="workshop-image">
-                <img src="https://images.unsplash.com/photo-1512820790803-83ca734da794?ixlib=rb-4.0.3&auto=format&fit=crop&w=1740&q=80" alt="Heure du conte">
-            </div>
-            <div class="workshop-content">
-                <div class="workshop-badge">Enfants</div>
-                <div class="workshop-emoji">📚</div>
-                <h3 class="workshop-title">Heure du conte & coloriage</h3>
-                <p class="workshop-description">Pour les enfants avec un moment calme et ludique. Une pause enchantée entre histoires et créativité.</p>
-                <div class="workshop-footer">
-                    <div class="workshop-info">
-                        <span class="info-item">
-                            <i class="far fa-clock"></i>
-                            1h
-                        </span>
-                        <span class="info-item">
-                            <i class="fas fa-users"></i>
-                            12 max
-                        </span>
-                    </div>
-                    <a href="#" class="workshop-btn">
-                        Réserver
-                        <i class="fas fa-arrow-right"></i>
-                    </a>
-                </div>
-            </div>
-        </div>
-
-        <div class="workshop-card">
-            <div class="workshop-image">
-                <img src="https://images.unsplash.com/photo-1588075592446-265fd1e6e76f?ixlib=rb-4.0.3&auto=format&fit=crop&w=1740&q=80" alt="Théâtre d'impro">
-            </div>
-            <div class="workshop-content">
-                <div class="workshop-badge">Expression</div>
-                <div class="workshop-emoji">🎭</div>
-                <h3 class="workshop-title">Théâtre d'impro pour enfants</h3>
-                <p class="workshop-description">Jeux de rôle et d'expression corporelle. Un espace ludique pour développer la confiance en soi.</p>
-                <div class="workshop-footer">
-                    <div class="workshop-info">
-                        <span class="info-item">
-                            <i class="far fa-clock"></i>
-                            1h30
-                        </span>
-                        <span class="info-item">
-                            <i class="fas fa-users"></i>
-                            8 max
-                        </span>
-                    </div>
-                    <a href="#" class="workshop-btn">
-                        Réserver
-                        <i class="fas fa-arrow-right"></i>
-                    </a>
-                </div>
-            </div>
-        </div>
+  <!-- Barre de progression upload -->
+  <div *ngIf="uploadProgress > 0 && uploadProgress < 100" class="upload-progress">
+    <div class="progress-bar">
+      <div class="progress-fill" [style.width.%]="uploadProgress"></div>
     </div>
+    <span>Upload en cours... {{ uploadProgress }}%</span>
+  </div>
+
+  <!-- Grille des ateliers -->
+  <div class="workshops-grid">
+
+    <div *ngFor="let atelier of ateliers" class="workshop-card">
+
+      <div class="workshop-image">
+        <img [src]="getImageUrlByCategorie(atelier.categorie)"
+             [alt]="atelier.nom + ' image par catégorie'"
+             loading="lazy"
+             class="workshop-img"
+             (error)="onImageError($event, atelier)" />
+      </div>
+
+      <!-- Actions Admin (Modifier / Supprimer) -->
+      <div *ngIf="isAdmin" class="admin-card-actions">
+        <button class="icon-btn" (click)="openEditForm(atelier)" title="Modifier">
+          <i class="fas fa-edit"></i>
+        </button>
+        <button class="icon-btn" (click)="deleteAtelier(atelier.id)" title="Supprimer">
+          <i class="fas fa-trash"></i>
+        </button>
+      </div>
+
+      <div class="workshop-content">
+        <h3 class="workshop-title">{{ atelier.nom }}</h3>
+        <p class="workshop-description">{{ atelier.description }}</p>
+
+        <div class="workshop-metadata">
+          <span class="workshop-genre" *ngIf="atelier.categorie">
+            <i class="fas fa-tag"></i> {{ atelier.categorie }}
+          </span>
+          <span class="workshop-coach" *ngIf="atelier.coach">
+            <i class="fas fa-user"></i> {{ atelier.coach.nom }} {{ atelier.coach.prenom }}
+          </span>
+        </div>
+
+        <div class="workshop-footer">
+          <div class="workshop-info">
+            <span class="info-item">
+              <i class="far fa-calendar-alt"></i> {{ atelier.date | date: 'dd/MM/yyyy' }}
+            </span>
+            <span class="info-item">
+              <i class="far fa-clock"></i> {{ atelier.heure }}
+            </span>
+          </div>
+          <a href="#" class="workshop-btn">Réserver <i class="fas fa-arrow-right"></i></a>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Message si aucun atelier -->
+  <div *ngIf="ateliers.length === 0 && !error" class="no-workshops">
+    <i class="fas fa-calendar-times"></i>
+    <h3>Aucun atelier disponible</h3>
+    <p>Les nouveaux ateliers seront bientôt disponibles !</p>
+  </div>
+
 </main>
 
-<footer>
-    <!-- Existing footer content -->
-</footer>
+<!-- Modal création/modification atelier -->
+<div *ngIf="showForm" class="modal-backdrop" (click)="closeModalOnBackdrop($event)">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <form [formGroup]="atelierForm" (ngSubmit)="submitForm()" novalidate enctype="multipart/form-data">
+
+      <div class="modal-header">
+        <h3 class="modal-title">{{ editingAtelier ? 'Modifier' : 'Créer' }} un Atelier</h3>
+        <button type="button" class="close-btn" (click)="cancel()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+
+        <!-- Nom -->
+        <div class="form-group">
+          <label for="nom" class="required">Nom de l'atelier</label>
+          <input id="nom" formControlName="nom" class="form-control" placeholder="Ex: Atelier de peinture" required />
+          <div class="error-text" *ngIf="atelierForm.get('nom')?.errors?.['required'] && atelierForm.get('nom')?.touched">
+            Le nom est obligatoire
+          </div>
+          <div class="error-text" *ngIf="atelierForm.get('nom')?.errors?.['minlength'] && atelierForm.get('nom')?.touched">
+            Le nom doit contenir au moins 3 caractères
+          </div>
+        </div>
+
+        <!-- Description -->
+        <div class="form-group">
+          <label for="description" class="required">Description</label>
+          <textarea id="description" formControlName="description" class="form-control textarea" rows="3" placeholder="Décrivez votre atelier..." required></textarea>
+          <div class="error-text" *ngIf="atelierForm.get('description')?.errors?.['required'] && atelierForm.get('description')?.touched">
+            La description est obligatoire
+          </div>
+          <div class="error-text" *ngIf="atelierForm.get('description')?.errors?.['minlength'] && atelierForm.get('description')?.touched">
+            La description doit contenir au moins 10 caractères
+          </div>
+        </div>
+
+        <!-- Catégorie -->
+        <div class="form-group">
+          <label for="categorie" class="required">Catégorie</label>
+          <select id="categorie" formControlName="categorie" class="form-control" required>
+            <option value="">Sélectionnez une catégorie</option>
+            <option value="Art">Art</option>
+            <option value="Cuisine">Cuisine</option>
+            <option value="Bien_etre">Bien-être</option>
+            <option value="Enfants">Enfants</option>
+            <option value="DIY">DIY</option>
+            <option value="Autre">Autre</option>
+          </select>
+          <div class="error-text" *ngIf="atelierForm.get('categorie')?.errors?.['required'] && atelierForm.get('categorie')?.touched">
+            La catégorie est obligatoire
+          </div>
+        </div>
+
+        <!-- Coach -->
+        <div class="form-group">
+          <label for="coachId" class="required">Coach</label>
+          <select id="coachId" formControlName="coachId" class="form-control" required>
+            <option value="">Sélectionnez un coach</option>
+            <option *ngFor="let coach of coaches" [value]="coach.id">{{ coach.nom }} {{ coach.prenom }}</option>
+          </select>
+          <div class="error-text" *ngIf="atelierForm.get('coachId')?.errors?.['required'] && atelierForm.get('coachId')?.touched">
+            Le coach est obligatoire
+          </div>
+          <div class="error-text" *ngIf="coaches.length === 0">
+            Aucun coach disponible pour le moment
+          </div>
+        </div>
+
+        <!-- Date et Heure -->
+        <div class="form-row">
+          <div class="form-group">
+            <label for="date" class="required">Date</label>
+            <input id="date" type="date" formControlName="date" class="form-control" [min]="getTodayDate()" required />
+            <div class="error-text" *ngIf="atelierForm.get('date')?.errors?.['required'] && atelierForm.get('date')?.touched">
+              La date est obligatoire
+            </div>
+            <div class="error-text" *ngIf="atelierForm.get('date')?.errors?.['futureDate'] && atelierForm.get('date')?.touched">
+              La date doit être dans le futur
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="heure" class="required">Heure</label>
+            <input id="heure" type="time" formControlName="heure" class="form-control" required />
+            <div class="error-text" *ngIf="atelierForm.get('heure')?.errors?.['required'] && atelierForm.get('heure')?.touched">
+              L'heure est obligatoire
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Footer with buttons -->
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="cancel()">Annuler</button>
+        <button type="submit" class="btn btn-primary" [disabled]="!canSubmitForm() || isSubmitting">
+          {{ getSubmitButtonText() }}
+        </button>
+      </div>
+
+    </form>
+  </div>
+</div>
+
 <app-footer></app-footer>

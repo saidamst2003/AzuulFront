@@ -195,6 +195,43 @@
   text-decoration: underline;
 }
 
+/* Debug Information Styles */
+.debug-info {
+  margin-top: 20px;
+  padding: 15px;
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  font-size: 12px;
+}
+
+.debug-info h4 {
+  margin: 0 0 10px 0;
+  color: #495057;
+  font-size: 14px;
+}
+
+.debug-info p {
+  margin: 0 0 10px 0;
+  color: #6c757d;
+  word-break: break-all;
+}
+
+.debug-btn {
+  background-color: #6c757d;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 4px;
+  font-size: 11px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.debug-btn:hover {
+  background-color: #5a6268;
+}
+
 /* Responsive design */
 @media (max-width: 480px) {
   .login-card {
