@@ -1,27 +1,47 @@
+export interface User {
+  id?: number;
+  email: string;
+  nom?: string;
+  prenom?: string;
+  role: string;
+  telephone?: string;
+  adresse?: string;
+}
+
 export interface LoginRequest {
   email: string;
   password: string;
 }
 
 export interface RegisterRequest {
-  fullName: string;
   email: string;
   password: string;
-  role: string;
+  nom: string;
+  prenom: string;
+  telephone?: string;
+  adresse?: string;
 }
 
-export interface User {
-  id: number;
-  firstName: string;
-  lastName: string;
-  email: string;
-  role: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface AuthResponse {
+export interface LoginResponse {
   token: string;
   user: User;
-  message?: string;
-} 
+}
+
+export interface Atelier {
+[x: string]: any;
+  photos: boolean;
+ id: number;
+  nom: string;
+  description: string;
+  date: string;
+  heure: string;
+  photo: string;
+  coachId: number;
+  categorie?: string; 
+}
+
+export interface Image {
+  id?: number;
+  url: string;
+  atelier?: Atelier;
+}
