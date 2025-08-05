@@ -83,11 +83,12 @@ export class AteliersComponent implements OnInit, OnDestroy {
         this.isAuthenticated = authenticated;
         if (!authenticated) {
           this.showToast('warning', 'Veuillez vous connecter pour accéder aux fonctionnalités complètes');
+          this.coaches = []; // Clear coaches when not authenticated
         } else {
           console.log('AtelierComponent: User is authenticated, loading data...');
           // Recharger les données si l'utilisateur vient de se connecter
           this.loadAteliers();
-          this.loadCoaches();
+          this.loadCoaches(); // Reload coaches when user becomes authenticated
         }
       })
     );
@@ -96,6 +97,11 @@ export class AteliersComponent implements OnInit, OnDestroy {
     const initialAuthState = this.authService.isAuthenticated();
     console.log('AtelierComponent: Initial authentication state:', initialAuthState);
     this.isAuthenticated = initialAuthState;
+    
+    // If initially authenticated, load coaches immediately
+    if (initialAuthState) {
+      this.loadCoaches();
+    }
   }
 
   private createForm(): FormGroup {
@@ -112,9 +118,10 @@ export class AteliersComponent implements OnInit, OnDestroy {
   private futureDateValidator(control: any) {
     if (!control.value) return null;
     const selectedDate = new Date(control.value);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    return selectedDate < today ? { futureDate: true } : null;
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(0, 0, 0, 0);
+    return selectedDate < tomorrow ? { futureDate: true } : null;
   }
 
   loadAteliers(): void {
@@ -138,21 +145,28 @@ export class AteliersComponent implements OnInit, OnDestroy {
   }
 
   loadCoaches(): void {
+    console.log('AtelierComponent: Starting to load coaches...');
+    console.log('AtelierComponent: Is authenticated:', this.isAuthenticated);
+    console.log('AtelierComponent: User token:', this.authService.getToken() ? 'Present' : 'Missing');
+    
+    // Check if user is authenticated before loading coaches
+    if (!this.isAuthenticated) {
+      console.log('AtelierComponent: User not authenticated, skipping coaches load');
+      this.coaches = [];
+      return;
+    }
+    
     this.subscription.add(
       this.atelierService.getCoaches().subscribe({
         next: (coaches) => {
-          console.log('AtelierComponent: Coaches loaded:', coaches);
+          console.log('AtelierComponent: Coaches loaded successfully:', coaches);
           this.coaches = coaches;
           if (coaches.length === 0) {
             console.log('AtelierComponent: No coaches available');
-            // Don't show warning toast for empty coaches - this might be expected
-            // this.showToast('warning', 'Aucun coach disponible pour le moment');
+            this.showToast('warning', 'Aucun coach disponible pour le moment');
           } else {
             console.log('AtelierComponent: Loaded', coaches.length, 'coaches');
-            // Show success message if we loaded coaches (including mock ones)
-            if (coaches.length > 0) {
-              console.log('AtelierComponent: Coaches available for atelier creation');
-            }
+            this.showToast('success', `${coaches.length} coach(es) chargé(s) avec succès`);
           }
         },
         error: (error) => {
@@ -162,8 +176,7 @@ export class AteliersComponent implements OnInit, OnDestroy {
           // Provide more specific error messages based on status code
           if (error.status === 403) {
             console.log('AtelierComponent: Access denied to coaches endpoint');
-            // Don't show error toast for 403 - this might be expected behavior
-            // this.showToast('warning', 'Vous n\'avez pas les permissions pour voir la liste des coaches');
+            this.showToast('warning', 'Vous n\'avez pas les permissions pour voir la liste des coaches');
           } else if (error.status === 401) {
             console.log('AtelierComponent: Unauthorized - redirecting to login');
             this.showToast('warning', 'Session expirée. Veuillez vous reconnecter.');
@@ -242,6 +255,14 @@ export class AteliersComponent implements OnInit, OnDestroy {
       return;
     }
 
+    // Check if user has a valid token
+    const token = this.authService.getToken();
+    if (!token) {
+      this.showToast('error', 'Session expirée. Veuillez vous reconnecter.');
+      this.navigateToLogin();
+      return;
+    }
+
     if (this.coaches.length === 0) {
       this.showToast('error', 'Aucun coach disponible pour créer un atelier');
       return;
@@ -275,14 +296,73 @@ export class AteliersComponent implements OnInit, OnDestroy {
         })
       );
     } else {
+      // Validate and format the data before sending
+      const coachId = +formData.coachId;
+      if (isNaN(coachId) || coachId <= 0) {
+        this.showToast('error', 'Veuillez sélectionner un coach valide');
+        return;
+      }
+
+      // Ensure date is in the correct format (YYYY-MM-DD) and is in the future
+      let formattedDate = formData.date;
+      if (formattedDate) {
+        const selectedDate = new Date(formattedDate);
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        tomorrow.setHours(0, 0, 0, 0); // Reset time to start of day
+        
+        // Check if date is at least tomorrow
+        if (selectedDate < tomorrow) {
+          this.showToast('error', 'La date doit être au moins demain');
+          return;
+        }
+        
+        // Format date as YYYY-MM-DD
+        if (!isNaN(selectedDate.getTime())) {
+          formattedDate = selectedDate.toISOString().split('T')[0];
+        }
+      }
+
+      // Ensure time is in the correct format (HH:MM)
+      let formattedTime = formData.heure;
+      if (formattedTime && formattedTime.length > 5) {
+        formattedTime = formattedTime.substring(0, 5);
+      }
+
       const createDto: CreateAtelierDTO = {
-        nom: formData.nom,
-        description: formData.description,
+        nom: formData.nom.trim(),
+        description: formData.description.trim(),
         categorie: formData.categorie,
-        date: formData.date,
-        heure: formData.heure,
-        coachId: +formData.coachId
+        date: formattedDate,
+        heure: formattedTime,
+        coachId: coachId
       };
+
+      // Validate all required fields
+      if (!createDto.nom || createDto.nom.length < 3) {
+        this.showToast('error', 'Le nom doit contenir au moins 3 caractères');
+        return;
+      }
+
+      if (!createDto.description || createDto.description.length < 10) {
+        this.showToast('error', 'La description doit contenir au moins 10 caractères');
+        return;
+      }
+
+      if (!createDto.categorie) {
+        this.showToast('error', 'Veuillez sélectionner une catégorie');
+        return;
+      }
+
+      if (!createDto.date) {
+        this.showToast('error', 'Veuillez sélectionner une date');
+        return;
+      }
+
+      if (!createDto.heure) {
+        this.showToast('error', 'Veuillez sélectionner une heure');
+        return;
+      }
 
       this.subscription.add(
         this.atelierService.create(createDto).subscribe({
@@ -375,8 +455,9 @@ export class AteliersComponent implements OnInit, OnDestroy {
   }
 
   getTodayDate(): string {
-    const today = new Date();
-    return today.toISOString().split('T')[0];
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1); // Set to tomorrow
+    return tomorrow.toISOString().split('T')[0];
   }
 
   closeModalOnBackdrop(event: MouseEvent): void {

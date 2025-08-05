@@ -23,6 +23,9 @@
   <button class="admin-action-btn" (click)="openCreateForm()">
     <i class="fas fa-plus"></i> Créer un Atelier
   </button>
+  <button class="admin-action-btn" (click)="loadCoaches()" [disabled]="!isAuthenticated">
+    <i class="fas fa-sync"></i> Recharger les Coaches
+  </button>
 </div>
 
 <!-- Authentication Warning -->
