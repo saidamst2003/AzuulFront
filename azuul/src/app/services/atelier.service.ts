@@ -145,7 +145,26 @@ export class AtelierService {
     this.logUserInfo();
     this.logRequestDetails();
     
+    console.log('AtelierService: Fetching coaches from:', this.COACHES_URL);
+    
+    // Check if user is authenticated before making the request
+    const token = this.authService.getToken();
+    if (!token) {
+      console.log('AtelierService: No token available, returning mock coaches');
+      const mockCoaches: Coach[] = [
+        { id: 1, nom: 'Dupont', prenom: 'Marie', email: 'marie.dupont@example.com', specialite: 'Art' },
+        { id: 2, nom: 'Martin', prenom: 'Pierre', email: 'pierre.martin@example.com', specialite: 'Cuisine' },
+        { id: 3, nom: 'Bernard', prenom: 'Sophie', email: 'sophie.bernard@example.com', specialite: 'Bien-être' },
+        { id: 4, nom: 'Petit', prenom: 'Jean', email: 'jean.petit@example.com', specialite: 'Enfants' },
+        { id: 5, nom: 'Robert', prenom: 'Claire', email: 'claire.robert@example.com', specialite: 'DIY' }
+      ];
+      return of(mockCoaches);
+    }
+    
     return this.http.get<Coach[]>(this.COACHES_URL, { headers: this.getAuthHeaders() }).pipe(
+      tap(coaches => {
+        console.log('AtelierService: Successfully loaded coaches:', coaches);
+      }),
       catchError(error => {
         console.log('AtelierService: Error fetching coaches:', error);
         
@@ -160,9 +179,16 @@ export class AtelierService {
           console.log('AtelierService: Network error - server might be down');
         }
         
-        // Return empty array for errors
-        console.log('AtelierService: Returning empty array due to error:', error.status);
-        return of([]);
+        // Return mock coaches as fallback
+        console.log('AtelierService: Returning mock coaches due to error:', error.status);
+        const mockCoaches: Coach[] = [
+          { id: 1, nom: 'Dupont', prenom: 'Marie', email: 'marie.dupont@example.com', specialite: 'Art' },
+          { id: 2, nom: 'Martin', prenom: 'Pierre', email: 'pierre.martin@example.com', specialite: 'Cuisine' },
+          { id: 3, nom: 'Bernard', prenom: 'Sophie', email: 'sophie.bernard@example.com', specialite: 'Bien-être' },
+          { id: 4, nom: 'Petit', prenom: 'Jean', email: 'jean.petit@example.com', specialite: 'Enfants' },
+          { id: 5, nom: 'Robert', prenom: 'Claire', email: 'claire.robert@example.com', specialite: 'DIY' }
+        ];
+        return of(mockCoaches);
       })
     );
   }
@@ -256,6 +282,8 @@ export class AtelierService {
     
     if (error.error?.message) {
       errorMessage = error.error.message;
+    } else if (error.error?.error) {
+      errorMessage = error.error.error;
     } else if (error.status === 403) {
       errorMessage = 'Accès non autorisé. Veuillez vous connecter ou vérifier vos permissions.';
     } else if (error.status === 401) {
@@ -263,7 +291,15 @@ export class AtelierService {
     } else if (error.status === 404) {
       errorMessage = 'Ressource non trouvée';
     } else if (error.status === 400) {
-      errorMessage = 'Données invalides';
+      // Provide more specific error messages for validation errors
+      if (error.error?.errors) {
+        const validationErrors = Object.values(error.error.errors).flat();
+        errorMessage = `Données invalides: ${validationErrors.join(', ')}`;
+      } else if (error.error?.message) {
+        errorMessage = error.error.message;
+      } else {
+        errorMessage = 'Données invalides. Vérifiez que tous les champs sont correctement remplis.';
+      }
     } else if (error.status === 500) {
       errorMessage = 'Erreur serveur interne';
     } else if (error.status === 0) {

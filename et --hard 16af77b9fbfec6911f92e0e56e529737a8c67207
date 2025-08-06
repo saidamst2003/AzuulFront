@@ -1,0 +1,195 @@
+[33mcommit 16af77b9fbfec6911f92e0e56e529737a8c67207[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32matelier[m[33m, [m[1;31morigin/atelier[m[33m, [m[1;32mcoach[m[33m)[m
+Author: saidamst2003 <saida2003mst@gmail.com>
+Date:   Thu Jul 31 15:05:36 2025 +0100
+
+    j'ai terminer crud creer et afficher un atelier
+
+[33mcommit 01a7926edb871b4ae95ec25fa1d4346afbfa9845[m
+Author: saidamst2003 <saida2003mst@gmail.com>
+Date:   Thu Jul 24 16:42:08 2025 +0100
+
+    j'ai creer  html de image
+
+[33mcommit 274f189a81312de98d36e5dc82dcfbf3bfa98cf4[m
+Author: saidamst2003 <saida2003mst@gmail.com>
+Date:   Thu Jul 24 16:39:50 2025 +0100
+
+    j'ai creer image-uploader
+
+[33mcommit 5aa7fe8d04ee6db11d93f5172a9302005ff36d56[m
+Author: saidamst2003 <saida2003mst@gmail.com>
+Date:   Thu Jul 24 16:37:35 2025 +0100
+
+    j'ai creer ImageUploadService
+
+[33mcommit cbbb751a59a3d2b165d028d698e0b81fef3cccd1[m
+Author: saidamst2003 <saida2003mst@gmail.com>
+Date:   Thu Jul 24 16:34:51 2025 +0100
+
+    j'ai creer model de image
+
+[33mcommit 461cb588219571945a312609732eec82305da50f[m
+Author: saidamst2003 <saida2003mst@gmail.com>
+Date:   Mon Jul 21 15:12:47 2025 +0100
+
+    j'ai  modifier atelier html
+
+[33mcommit 82fbfba8426d95da0d4c966376ecd0fa75c9df22[m
+Author: saidamst2003 <saida2003mst@gmail.com>
+Date:   Mon Jul 21 15:11:18 2025 +0100
+
+    j'ai  modifier atelier ts
+
+[33mcommit 21527c20cbd8de86127976f959d0846548f18d1f[m
+Author: saidamst2003 <saida2003mst@gmail.com>
+Date:   Mon Jul 21 15:10:10 2025 +0100
+
+    j'ai  modifier service de atelier
+
+[33mcommit 4bdc50afb40ae3dc904e3296a7fdfbba8f7dcee7[m
+Author: saidamst2003 <saida2003mst@gmail.com>
+Date:   Mon Jul 21 09:42:34 2025 +0100
+
+    j'ai modifier dans ts de atelier
+
+[33mcommit aefcf2d52d3cabadafb1e638030436d72e4b87b7[m
+Author: saidamst2003 <saida2003mst@gmail.com>
+Date:   Mon Jul 21 09:41:51 2025 +0100
+
+    j'ai modifier dans html de atelier
+
+[33mcommit 059873bd5fab874caf25c00e319d45c6a1747be2[m
+Author: saidamst2003 <saida2003mst@gmail.com>
+Date:   Mon Jul 21 09:41:20 2025 +0100
+
+    j'ai modifier dans css de atelier
+
+[33mcommit 3cde9a45665702b0c3460d1f08b356b72525c197[m
+Merge: e17233e 77890ed
+Author: saidamst2003 <saida2003mst@gmail.com>
+Date:   Sun Jul 20 19:42:06 2025 +0100
+
+    j'ai m
+
+[33mcommit e17233e56abd903adac9f0d68e848561f4449d6a[m
+Author: saidamst2003 <saida2003mst@gmail.com>
+Date:   Sun Jul 20 19:31:13 2025 +0100
+
+    j'ai modifier pour fixer un error de registration
+
+[33mcommit 77890ed1b885cef0ee34d6e0e16bb452dc597a23[m
+Merge: 1b7a330 89437c8
+Author: saidamst2003 <125463843+saidamst2003@users.noreply.github.com>
+Date:   Sun Jul 20 19:49:08 2025 +0200
+
+    Merge pull request #5 from saidamst2003/registration
+    
+    j'ai modifier pour fixer un error de registration
+
+[33mcommit 89437c81cc652d6b1667da6d6674b19c16b118b9[m[33m ([m[1;31morigin/registration[m[33m, [m[1;32mregistration[m[33m)[m
+Author: saidamst2003 <saida2003mst@gmail.com>
+Date:   Sun Jul 20 18:47:01 2025 +0100
+
+    j'ai modifier pour fixer un error de registration
+
+[33mcommit 1b7a330c6dfd89dffc898525327af530cf6e6580[m
+Merge: ac9b662 85351cf
+Author: saidamst2003 <125463843+saidamst2003@users.noreply.github.com>
+Date:   Mon Jul 14 02:37:43 2025 +0200
+
+    Merge pull request #4 from saidamst2003/registration
+    
+    Registration
+
+[33mcommit 85351cfbf254daa417551a49f261f016aeb23d89[m
+Author: saidamst2003 <saida2003mst@gmail.com>
+Date:   Mon Jul 14 01:36:45 2025 +0100
+
+    j'ai fais authInterceptor
+
+[33mcommit 1950433ac8db129cbb9d862d170cdf6a0755ed63[m
+Author: saidamst2003 <saida2003mst@gmail.com>
+Date:   Mon Jul 14 01:36:05 2025 +0100
+
+    j'ai creer authservice
+
+[33mcommit b31eb0a6572ceac2a8272f22da76c39c1a6ab9d5[m
+Author: saidamst2003 <saida2003mst@gmail.com>
+Date:   Mon Jul 14 01:35:03 2025 +0100
+
+    j'ai fait ts de fonction de re gistration
+
+[33mcommit 7f86da6096247f3d3e5e985fb18c57938d2f0b0d[m
+Author: saidamst2003 <saida2003mst@gmail.com>
+Date:   Mon Jul 14 01:34:08 2025 +0100
+
+    j'ai Creer html de rzgistartion et css
+
+[33mcommit c2e1f07859e94796e93b80be9f8dea4d34b89abd[m
+Author: saidamst2003 <saida2003mst@gmail.com>
+Date:   Mon Jul 14 01:33:23 2025 +0100
+
+    j'ai Creer route de login et registration
+
+[33mcommit ac9b662fe5b9bfc1a1aabf9f2920981bf64db889[m
+Merge: 9959015 6029c3d
+Author: saidamst2003 <125463843+saidamst2003@users.noreply.github.com>
+Date:   Mon Jul 7 10:37:48 2025 +0200
+
+    Merge pull request #3 from saidamst2003/galerie
+    
+    j'ai creer templetv de page galerie
+
+[33mcommit 6029c3d484038735de63f0c6d8e277b1a7bc1114[m[33m ([m[1;31morigin/galerie[m[33m, [m[1;32mgalerie[m[33m)[m
+Author: saidamst2003 <saida2003mst@gmail.com>
+Date:   Mon Jul 7 09:36:37 2025 +0100
+
+    j'ai creer templetv de page galerie
+
+[33mcommit 99590157388dabffdfcdc96d505dc8908b660329[m
+Merge: 68ff9eb e5b0817
+Author: saidamst2003 <125463843+saidamst2003@users.noreply.github.com>
+Date:   Fri Jul 4 16:17:40 2025 +0200
+
+    Merge pull request #2 from saidamst2003/pauseCafee
+    
+     j'ai creer page de pause  cafee
+
+[33mcommit e5b08171672f2fc99a8b189925f2e0e0f9b42ec3[m[33m ([m[1;31morigin/pauseCafee[m[33m, [m[1;32mpauseCafee[m[33m)[m
+Author: saidamst2003 <saida2003mst@gmail.com>
+Date:   Fri Jul 4 15:13:53 2025 +0100
+
+     j'ai creer page de pause  cafee
+
+[33mcommit 68ff9eb7016afa9f9c84e112746d2805c17d3a37[m
+Merge: f07cb5e c94907b
+Author: saidamst2003 <125463843+saidamst2003@users.noreply.github.com>
+Date:   Fri Jul 4 13:54:47 2025 +0200
+
+    Merge pull request #1 from saidamst2003/atelier
+    
+    Atelier
+
+[33mcommit c94907b63f8ad3b0f51d8f14397939eea75c0eae[m
+Author: saidamst2003 <saida2003mst@gmail.com>
+Date:   Fri Jul 4 12:53:21 2025 +0100
+
+    j'ai creer page atelier
+
+[33mcommit bb9cb80335897a56021bc6c6110b50e0042fe55d[m
+Author: saidamst2003 <saida2003mst@gmail.com>
+Date:   Fri Jul 4 12:52:52 2025 +0100
+
+    j'ai creer nav bar et fouter
+
+[33mcommit f07cb5e1a1f77ff166f5ec83b84d405edcacbc95[m
+Author: saidamst2003 <saida2003mst@gmail.com>
+Date:   Fri Jul 4 11:41:18 2025 +0100
+
+    j'ai creer structure de projet et composantr
+
+[33mcommit e50990b9a3aaa6ed7d43ccd4b43419cae2dc1b42[m
+Author: saidamst2003 <saida2003mst@gmail.com>
+Date:   Fri Jul 4 11:20:46 2025 +0100
+
+    first commit
