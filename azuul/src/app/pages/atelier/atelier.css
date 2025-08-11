@@ -191,10 +191,22 @@ body {
   overflow-y: auto;
   box-shadow: 0 5px 25px rgba(0,0,0,0.2);
 }
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.close-btn {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 18px;
+}
 .modal-title {
   font-size: 1.3rem;
   margin-bottom: 10px;
 }
+.modal-body { margin: 8px 0 4px; }
 .form-group {
   margin-bottom: 10px;
 }
@@ -221,12 +233,22 @@ body {
   justify-content: flex-end;
   gap: 10px;
 }
+.modal-footer {
+  margin-top: 12px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
 .btn-submit, .btn-cancel {
   padding: 10px 20px;
   border-radius: 8px;
   border: none;
   cursor: pointer;
 }
+.btn { padding: 10px 16px; border-radius: 8px; border: none; cursor: pointer; }
+.btn-primary { background: var(--primary-color); color: var(--white); }
+.btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+.btn-secondary { background: #e2e8f0; color: var(--text-dark); }
 .btn-submit {
   background: var(--primary-color);
   color: var(--white);
@@ -315,6 +337,17 @@ body {
 .workshop-btn:hover {
     background: var(--secondary-color);
     transform: translateY(-2px);
+}
+
+.reservation-info {
+  text-align: center;
+  margin-top: 8px;
+}
+
+.reservation-info small {
+  color: var(--text-light);
+  font-size: 0.8rem;
+  font-style: italic;
 }
 
 .image-preview-container {
