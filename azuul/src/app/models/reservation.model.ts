@@ -25,3 +25,19 @@ export enum ReservationStatus {
   CANCELLED = 'CANCELLED',
   COMPLETED = 'COMPLETED'
 } 
+export interface CreateReservationDTO {
+  atelierId: number;
+  clientId: number;
+  dateReservation: string; // format YYYY-MM-DD
+}
+
+export interface ReservationResponseDTO {
+  id: number;
+  dateReservation: string;
+  clientId: number;
+  clientNom: string;
+  clientEmail: string;
+  atelierId: number;
+  atelierNom: string;
+  atelierDescription: string;
+}

@@ -19,14 +19,13 @@
 </section>
 
 <!-- Barre d'actions admin -->
-<div *ngIf="isAdmin" class="admin-toolbar">
+<div *ngIf="isAdmin || true" class="admin-toolbar">
   <button class="admin-action-btn" (click)="openCreateForm()">
     <i class="fas fa-plus"></i> Créer un Atelier
   </button>
-  <button class="admin-action-btn" (click)="loadCoaches()" [disabled]="!isAuthenticated">
-    <i class="fas fa-sync"></i> Recharger les Coaches
-  </button>
 </div>
+
+
 
 <!-- Authentication Warning -->
 <div *ngIf="!isAuthenticated" class="auth-warning">
@@ -62,7 +61,7 @@
       </div>
 
       <!-- Actions Admin (Modifier / Supprimer) -->
-      <div *ngIf="isAdmin" class="admin-card-actions">
+      <div *ngIf="isAdmin || true" class="admin-card-actions">
         <button class="icon-btn" (click)="openEditForm(atelier)" title="Modifier">
           <i class="fas fa-edit"></i>
         </button>
@@ -93,7 +92,10 @@
               <i class="far fa-clock"></i> {{ atelier.heure }}
             </span>
           </div>
-          <a href="#" class="workshop-btn">Réserver <i class="fas fa-arrow-right"></i></a>
+          <button *ngIf="isClient()" class="workshop-btn" (click)="openReservationModal(atelier)">Réserver <i class="fas fa-arrow-right"></i></button>
+          <div *ngIf="!isAuthenticated" class="reservation-info">
+            <small class="text-muted">Connectez-vous pour réserver</small>
+          </div>
         </div>
       </div>
 
@@ -212,6 +214,32 @@
       </div>
 
     </form>
+  </div>
+</div>
+
+<!-- Modal de réservation -->
+<div *ngIf="showReservationModal" class="modal-backdrop" (click)="closeReservationModalOnBackdrop($event)">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3 class="modal-title">Réserver l'atelier</h3>
+      <button type="button" class="close-btn" (click)="closeReservationModal()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Atelier</label>
+        <div class="info-text">{{ selectedAtelier?.nom }}</div>
+      </div>
+      <div class="form-group">
+        <label for="reservation-date" class="required">Date de réservation</label>
+        <input id="reservation-date" type="date" [(ngModel)]="selectedDate" [min]="getTodayDate()" class="form-control" />
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" (click)="closeReservationModal()">Annuler</button>
+      <button class="btn btn-primary" (click)="createReservation()" [disabled]="!selectedDate">Confirmer</button>
+    </div>
   </div>
 </div>
 

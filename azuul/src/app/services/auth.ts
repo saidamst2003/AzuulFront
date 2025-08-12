@@ -82,6 +82,10 @@ export class AuthService {
     return null;
   }
 
+  getCurrentUser(): User | null {
+    return this._user.getValue();
+  }
+
   private updateState(token: string): void {
     const user: User = this.decodeToken(token);
     this._user.next(user);

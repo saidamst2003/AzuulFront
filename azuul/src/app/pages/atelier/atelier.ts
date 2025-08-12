@@ -4,10 +4,13 @@ import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angula
 import { Subscription } from 'rxjs';
 import { Atelier, Coach, CreateAtelierDTO } from '../../models/atelier.model';
 import { AtelierService } from '../../services/atelier.service';
+import { ReservationService } from '../../services/reservation.service';
 import { AuthService } from '../../services/auth';
 import { Router } from '@angular/router';
 import { Footer } from "../../layout/footer/footer";
 import { Navbar } from "../../layout/navbar/navbar";
+import { FormsModule } from '@angular/forms';
+import { CreateReservationDTO } from '../../models/reservation.model';
 
 interface Toast {
   id: number;
@@ -18,7 +21,7 @@ interface Toast {
 @Component({
   selector: 'app-ateliers',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, Footer, Navbar],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, Footer, Navbar],
   templateUrl: './atelier.html',
   styleUrls: ['./atelier.css']
 })
@@ -41,10 +44,16 @@ export class AteliersComponent implements OnInit, OnDestroy {
   toasts: Toast[] = [];
   private toastCounter = 0;
 
+  // --- Réservation ---
+  showReservationModal = false;
+  selectedDate: string = '';
+  selectedAtelier: Atelier | null = null;
+
   private subscription = new Subscription();
 
   constructor(
     private atelierService: AtelierService,
+    private reservationService: ReservationService,
     private authService: AuthService,
     public router: Router,
     private fb: FormBuilder
@@ -65,6 +74,25 @@ export class AteliersComponent implements OnInit, OnDestroy {
   // Méthode pour vérifier le token
   checkToken(): void {
     this.atelierService.checkAndUseToken();
+  }
+
+  // Méthode pour forcer l'affichage des boutons admin (debugging)
+  forceShowAdminButtons(): void {
+    console.log('AtelierComponent: Force showing admin buttons');
+    this.isAdmin = true;
+    console.log('AtelierComponent: isAdmin forced to true');
+  }
+
+  // Méthode de test pour vérifier que le composant fonctionne
+  testMethod(): void {
+    console.log('AtelierComponent: Test method called');
+  }
+
+  // Méthode publique pour forcer l'admin
+  public forceAdmin(): void {
+    console.log('AtelierComponent: Force admin called');
+    this.isAdmin = true;
+    console.log('AtelierComponent: isAdmin set to true');
   }
 
   ngOnDestroy(): void {
@@ -198,11 +226,28 @@ export class AteliersComponent implements OnInit, OnDestroy {
   }
 
   checkAdminStatus(): void {
+    console.log('AtelierComponent: Checking admin status...');
     this.subscription.add(
       this.authService.user$.subscribe(user => {
+        console.log('AtelierComponent: User data received:', user);
+        console.log('AtelierComponent: User role:', user?.role);
         this.isAdmin = user?.role === 'ADMIN' || user?.role === 'COACH';
+        console.log('AtelierComponent: isAdmin set to:', this.isAdmin);
       })
     );
+    
+    // Vérifier aussi l'état initial
+    const currentUser = this.authService.getCurrentUser();
+    console.log('AtelierComponent: Current user from auth service:', currentUser);
+    if (currentUser) {
+      this.isAdmin = currentUser.role === 'ADMIN' || currentUser.role === 'COACH';
+      console.log('AtelierComponent: isAdmin set from current user:', this.isAdmin);
+    }
+  }
+
+  // Helper method to check if user is a client (can make reservations)
+  isClient(): boolean {
+    return this.isAuthenticated && !this.isAdmin;
   }
 
   openCreateForm(): void {
@@ -290,7 +335,7 @@ export class AteliersComponent implements OnInit, OnDestroy {
             this.isSubmitting = false;
             
             if (error.status === 401 || error.status === 403) {
-             
+              this.navigateToLogin();
             }
           }
         })
@@ -376,7 +421,7 @@ export class AteliersComponent implements OnInit, OnDestroy {
             this.isSubmitting = false;
             
             if (error.status === 401 || error.status === 403) {
-             
+              this.navigateToLogin();
             }
           }
         })
@@ -442,7 +487,7 @@ export class AteliersComponent implements OnInit, OnDestroy {
             this.showToast('error', error.userMessage || 'Erreur lors de la suppression');
             
             if (error.status === 401 || error.status === 403) {
-
+              this.navigateToLogin();
             }
           }
         })
@@ -499,5 +544,65 @@ export class AteliersComponent implements OnInit, OnDestroy {
     if (index > -1) {
       this.toasts.splice(index, 1);
     }
+  }
+
+  openReservationModal(atelier: Atelier): void {
+    if (!this.isAuthenticated) {
+      this.showToast('warning', 'Veuillez vous connecter pour réserver un atelier');
+      this.navigateToLogin();
+      return;
+    }
+    
+    if (this.isAdmin) {
+      this.showToast('warning', 'Les admins et coaches ne peuvent pas réserver d\'ateliers');
+      return;
+    }
+    
+    this.selectedAtelier = atelier;
+    this.selectedDate = '';
+    this.showReservationModal = true;
+  }
+
+  closeReservationModal(): void {
+    this.showReservationModal = false;
+    this.selectedAtelier = null;
+    this.selectedDate = '';
+  }
+
+  closeReservationModalOnBackdrop(event: MouseEvent): void {
+    if (event.target === event.currentTarget) {
+      this.closeReservationModal();
+    }
+  }
+
+  createReservation(): void {
+    if (!this.selectedAtelier || !this.selectedDate) return;
+    
+    if (this.isAdmin) {
+      this.showToast('error', 'Les admins et coaches ne peuvent pas réserver d\'ateliers');
+      return;
+    }
+    
+    const user = this.authService.getCurrentUser();
+    if (!user?.id) {
+      this.showToast('error', 'Veuillez vous connecter');
+      this.navigateToLogin();
+      return;
+    }
+    const dto: CreateReservationDTO = {
+      atelierId: this.selectedAtelier.id!,
+      clientId: user.id,
+      dateReservation: this.selectedDate
+    };
+    this.reservationService.create(dto).subscribe({
+      next: () => {
+        this.showToast('success', 'Réservation réussie !');
+        this.closeReservationModal();
+      },
+      error: (err) => {
+        const msg = err?.userMessage || err?.error?.message || 'Erreur lors de la réservation';
+        this.showToast('error', msg);
+      }
+    });
   }
 }

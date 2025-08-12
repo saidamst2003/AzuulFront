@@ -304,7 +304,7 @@ export class AtelierService {
       errorMessage = 'Erreur serveur interne';
     } else if (error.status === 0) {
       errorMessage = 'Impossible de contacter le serveur. Vérifiez votre connexion.';
-    }
+    }  
 
     return throwError(() => ({ ...error, userMessage: errorMessage }));
   }
@@ -317,4 +317,6 @@ export class AtelierService {
   formatTime(timeString: string): string {
     return timeString.substring(0, 5);
   }
+
+  // Réservations déplacées vers ReservationService
 }
