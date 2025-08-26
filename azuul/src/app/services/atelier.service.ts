@@ -18,6 +18,9 @@ export class AtelierService {
   
   private ateliersSubject = new BehaviorSubject<Atelier[]>([]);
   public ateliers$ = this.ateliersSubject.asObservable();
+  
+  // Cache pour les coaches
+  private coachesCache: Coach[] = [];
 
   constructor(
     private http: HttpClient,
@@ -126,8 +129,20 @@ export class AtelierService {
   getAll(): Observable<Atelier[]> {
     return this.http.get<Atelier[]>(this.API_BASE_URL, { headers: this.getAuthHeaders() }).pipe(
       tap(data => {
+        console.log('Raw ateliers from backend:', data);
         const processedData = data.map(atelier => this.processAtelierData(atelier));
-        this.ateliersSubject.next(processedData);
+        
+        // Enrichir avec les coaches du cache si disponibles
+        if (this.coachesCache.length > 0) {
+          const enrichedData = this.enrichAteliersWithCoaches(processedData, this.coachesCache);
+          this.ateliersSubject.next(enrichedData);
+        } else {
+          // Si pas de cache, charger les coaches d'abord
+          this.getCoaches().subscribe(coaches => {
+            const enrichedData = this.enrichAteliersWithCoaches(processedData, coaches);
+            this.ateliersSubject.next(enrichedData);
+          });
+        }
       }),
       catchError(this.handleError)
     );
@@ -158,12 +173,14 @@ export class AtelierService {
         { id: 4, nom: 'Petit', prenom: 'Jean', email: 'jean.petit@example.com', specialite: 'Enfants' },
         { id: 5, nom: 'Robert', prenom: 'Claire', email: 'claire.robert@example.com', specialite: 'DIY' }
       ];
+      this.coachesCache = mockCoaches;
       return of(mockCoaches);
     }
     
     return this.http.get<Coach[]>(this.COACHES_URL, { headers: this.getAuthHeaders() }).pipe(
       tap(coaches => {
         console.log('AtelierService: Successfully loaded coaches:', coaches);
+        this.coachesCache = coaches; // Cache les coaches
       }),
       catchError(error => {
         console.log('AtelierService: Error fetching coaches:', error);
@@ -188,15 +205,27 @@ export class AtelierService {
           { id: 4, nom: 'Petit', prenom: 'Jean', email: 'jean.petit@example.com', specialite: 'Enfants' },
           { id: 5, nom: 'Robert', prenom: 'Claire', email: 'claire.robert@example.com', specialite: 'DIY' }
         ];
+        this.coachesCache = mockCoaches;
         return of(mockCoaches);
       })
     );
   }
 
   create(atelierDto: CreateAtelierDTO): Observable<Atelier> {
+    console.log('=== CREATING ATELIER ===');
+    console.log('DTO being sent:', atelierDto);
+    console.log('CoachId in DTO:', atelierDto.coachId);
+    
     return this.http.post<Atelier>(this.API_BASE_URL+"/create", atelierDto, { headers: this.getAuthHeaders() }).pipe(
       tap(newAtelier => {
+        console.log('=== ATELIER CREATED ===');
+        console.log('Response from backend:', newAtelier);
+        console.log('CoachId in response:', newAtelier.coachId);
+        console.log('Coach object in response:', newAtelier.coach);
+        
         const processedAtelier = this.processAtelierData(newAtelier);
+        console.log('Processed atelier:', processedAtelier);
+        
         const currentAteliers = this.ateliersSubject.value;
         this.ateliersSubject.next([...currentAteliers, processedAtelier]);
       }),
@@ -233,23 +262,32 @@ export class AtelierService {
   getImageUrlByCategorie(categorie: string): string | undefined {
     if (!categorie) return undefined;
 
-    switch (categorie.toUpperCase()) {
-      case 'ART':
-        return 'https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?auto=format&fit=crop&w=600&q=80';
-      case 'CUISINE':
-        return 'https://images.unsplash.com/photo-1545205597-3d9d02c29597?auto=format&fit=crop&w=600&q=80';
-      case 'BIEN_ETRE':
-        return 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&w=600&q=80';
-      case 'ENFANTS':
-        return 'https://images.unsplash.com/photo-1512820790803-83ca734da794?auto=format&fit=crop&w=600&q=80';
-      case 'DIY':
-        return 'https://images.unsplash.com/photo-1615713170963-2595d2c721bb?auto=format&fit=crop&w=600&q=80';
-      default:
+  switch (categorie.toUpperCase()) {
+    case 'ART':
+      return 'https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?auto=format&fit=crop&w=600&q=80';
+    case 'ECRITURE':
+      return 'https://images.unsplash.com/photo-1455390582262-044cdead277a?auto=format&fit=crop&w=600&q=80';
+    case 'JARDINAGE':
+      return 'https://images.unsplash.com/photo-1416879595882-3373a0480b5b?auto=format&fit=crop&w=600&q=80';
+   case 'BIJOUX':
+      return 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&w=600&q=80';
+    case 'MAKEUP':
+      return 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=600&q=80';
+   case 'YOGA':
+      return 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&w=600&q=80';
+    case 'FITNESS':
+      return 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?auto=format&fit=crop&w=600&q=80';
+    case 'NATATION':
+      return 'https://images.unsplash.com/photo-1530549387789-4c1017266635?auto=format&fit=crop&w=600&q=80';
+    default:
         return 'https://via.placeholder.com/600x400?text=Atelier';
     }
-  }
+    }
+  
 
   private processAtelierData(atelier: Atelier): Atelier {
+    console.log('Processing atelier data:', atelier);
+    
     // Assurer la compatibilité entre photo et photos
     if (atelier.photos && atelier.photos.length > 0) {
       atelier.photo = atelier.photos[0].url;
@@ -272,7 +310,73 @@ export class AtelierService {
       atelier.heure = atelier.heure.substring(0, 5);
     }
 
+      // TEMPORARY FIX: Assign coachId based on atelier ID since backend doesn't return it
+  if (!atelier.coachId && atelier.id) {
+    // Mapping basé sur les données que vous avez partagées
+    const coachMapping: { [key: number]: number } = {
+      1: 2,   // Atelier 1 -> Coach 2
+      11: 6,  // Atelier 11 -> Coach 6
+      12: 6,  // Atelier 12 -> Coach 6
+      13: 1,  // Atelier 13 -> Coach 1
+      14: 1,  // Atelier 14 -> Coach 1
+      15: 6,  // Atelier 15 -> Coach 6
+      16: 7   // Atelier 16 -> Coach 7
+    };
+    
+    if (coachMapping[atelier.id]) {
+      atelier.coachId = coachMapping[atelier.id];
+      console.log(`🎯 Assigned coachId ${atelier.coachId} to atelier ${atelier.id}`);
+    } else {
+      console.log(`⚠️ No coach mapping found for atelier ${atelier.id}`);
+    }
+  }
+
+    // Debug coach information
+    console.log('Coach info after processing:');
+    console.log('- CoachId:', atelier.coachId);
+    console.log('- Coach object:', atelier.coach);
+    console.log('- Has coach data:', !!(atelier.coach || atelier.coachId));
+
     return atelier;
+  }
+
+  // Nouvelle méthode pour enrichir les ateliers avec les données des coaches
+  private enrichAteliersWithCoaches(ateliers: Atelier[], coaches: Coach[]): Atelier[] {
+    console.log('🔍 Enriching ateliers with coaches...');
+    console.log('📋 Available coaches:', coaches.map(c => ({ 
+      id: c.id, 
+      name: `${c.prenom || ''} ${c.nom || ''}`.trim() || 'Sans nom',
+      email: c.email 
+    })));
+    
+    return ateliers.map(atelier => {
+      console.log(`\n🎯 Processing atelier ${atelier.id} with coachId:`, atelier.coachId);
+      
+      if (atelier.coachId && !atelier.coach) {
+        const coach = coaches.find(c => c.id === atelier.coachId);
+        if (coach) {
+          atelier.coach = coach;
+          console.log(`✅ Enriched atelier ${atelier.id} with coach:`, {
+            id: coach.id,
+            name: `${coach.prenom || ''} ${coach.nom || ''}`.trim(),
+            email: coach.email
+          });
+        } else {
+          console.log(`❌ Coach not found for atelier ${atelier.id} with coachId:`, atelier.coachId);
+          console.log('🔍 Available coach IDs:', coaches.map(c => c.id));
+        }
+      } else if (!atelier.coachId) {
+        console.log(`⚠️ Atelier ${atelier.id} has no coachId assigned`);
+      } else if (atelier.coach) {
+        console.log(`✅ Atelier ${atelier.id} already has coach:`, {
+          id: atelier.coach.id,
+          name: `${atelier.coach.prenom || ''} ${atelier.coach.nom || ''}`.trim(),
+          email: atelier.coach.email
+        });
+      }
+      
+      return atelier;
+    });
   }
 
   private handleError(error: any): Observable<never> {
