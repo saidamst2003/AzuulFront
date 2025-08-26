@@ -926,6 +926,12 @@ body {
   border-left: 4px solid #ffc107;
 }
 
+.toast-info {
+  background-color: #d1ecf1;
+  color: #0c5460;
+  border-left: 4px solid #17a2b8;
+}
+
 .toast-message {
   flex: 1;
   margin-right: 10px;
@@ -1058,4 +1064,240 @@ body {
         margin: 0 auto;
         max-width: 400px;
     }
+}
+
+/* Black and White Reservation Modal Styles */
+.reservation-modal-backdrop {
+  background: rgba(0, 0, 0, 0.9);
+  backdrop-filter: blur(15px);
+}
+
+.reservation-modal-content {
+  background: #ffffff;
+  border: 2px solid #000000;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.8);
+}
+
+.reservation-modal-header {
+  background: #000000;
+  color: #ffffff;
+  border-bottom: 2px solid #ffffff;
+}
+
+.reservation-modal-header::before {
+  display: none;
+}
+
+.modal-title {
+  color: #ffffff;
+  text-shadow: none;
+}
+
+.modal-subtitle.workshop-name {
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 1.2rem;
+}
+
+.modal-subtitle.coach-name {
+  color: #ffffff;
+  opacity: 0.9;
+  font-weight: 600;
+  font-size: 1.1rem;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 8px 16px;
+  border-radius: 20px;
+  display: inline-block;
+  margin-top: 8px;
+}
+
+.reservation-close-btn {
+  background: #ffffff;
+  color: #000000;
+  border: 2px solid #000000;
+}
+
+.reservation-close-btn:hover {
+  background: #000000;
+  color: #ffffff;
+  border-color: #ffffff;
+}
+
+.reservation-modal-body {
+  background: #ffffff;
+  color: #000000;
+}
+
+.section-header {
+  color: #000000;
+  border-bottom: 2px solid #000000;
+  padding-bottom: 10px;
+}
+
+.section-header i {
+  color: #000000;
+  background: none;
+  -webkit-background-clip: unset;
+  -webkit-text-fill-color: unset;
+  background-clip: unset;
+}
+
+.modal-info {
+  color: #000000;
+  font-weight: 500;
+  padding: 10px 0;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.modal-info.coach-info {
+  background: #f8f8f8;
+  padding: 15px;
+  border-radius: 8px;
+  border: 1px solid #000000;
+  margin-top: 10px;
+}
+
+.modal-info i {
+  color: #000000;
+  margin-right: 8px;
+}
+
+.date-selection-section {
+  background: #ffffff;
+  border: 2px solid #000000;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.date-selection-section::before {
+  background: #000000;
+}
+
+.description-section {
+  background: #ffffff;
+  border: 2px solid #000000;
+  border-radius: 20px;
+  padding: 25px;
+  margin-top: 25px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* Coach Section Styles */
+.coach-section {
+  background: #ffffff;
+  border: 2px solid #000000;
+  border-radius: 20px;
+  padding: 25px;
+  margin-top: 25px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.coach-info-card {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 20px;
+  background: #f8f8f8;
+  border: 1px solid #000000;
+  border-radius: 15px;
+  margin-top: 15px;
+}
+
+.coach-avatar {
+  width: 60px;
+  height: 60px;
+  background: #000000;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  font-size: 24px;
+  border: 2px solid #ffffff;
+}
+
+.coach-details {
+  flex: 1;
+}
+
+.coach-name {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #000000;
+  margin: 0 0 8px 0;
+  text-transform: capitalize;
+}
+
+.coach-specialty {
+  color: #000000;
+  font-size: 1rem;
+  margin: 0;
+  opacity: 0.8;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.coach-specialty i {
+  color: #000000;
+  font-size: 0.9rem;
+}
+
+.reservation-modal-footer {
+  background: #000000;
+  border-top: 2px solid #ffffff;
+}
+
+.reservation-btn {
+  border: 2px solid #ffffff;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.reservation-btn.btn-secondary {
+  background: #ffffff;
+  color: #000000;
+}
+
+.reservation-btn.btn-secondary:hover {
+  background: #000000;
+  color: #ffffff;
+  border-color: #ffffff;
+}
+
+.reservation-btn.btn-primary {
+  background: #000000;
+  color: #ffffff;
+}
+
+.reservation-btn.btn-primary:hover {
+  background: #ffffff;
+  color: #000000;
+  border-color: #000000;
+}
+
+/* No Coach Styles */
+.coach-section.no-coach {
+  border-color: #ff6b6b;
+  background: #fff5f5;
+}
+
+.coach-section.no-coach .section-header {
+  color: #d63031;
+}
+
+.coach-section.no-coach .section-header i {
+  color: #ff6b6b;
+}
+
+.no-coach-card {
+  background: #ffe6e6 !important;
+  border-color: #ff6b6b !important;
+}
+
+.no-coach-card .coach-avatar {
+  background: #ff6b6b !important;
+}
+
+.no-coach-card .coach-name {
+  color: #d63031 !important;
 }

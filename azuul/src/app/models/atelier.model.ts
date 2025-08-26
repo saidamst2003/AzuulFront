@@ -15,8 +15,10 @@ export interface Atelier {
 
 export interface Coach {
   id: number;
-  nom: string;
-  prenom: string;
+  nom?: string;
+  
+  prenom?: string;
+  fullName?: string;
   email?: string;
   specialite?: string;
 }

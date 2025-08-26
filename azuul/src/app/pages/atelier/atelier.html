@@ -19,7 +19,7 @@
 </section>
 
 <!-- Barre d'actions admin -->
-<div *ngIf="isAdmin || true" class="admin-toolbar">
+<div *ngIf="isAdmin" class="admin-toolbar">
   <button class="admin-action-btn" (click)="openCreateForm()">
     <i class="fas fa-plus"></i> Créer un Atelier
   </button>
@@ -154,12 +154,14 @@
           <label for="categorie" class="required">Catégorie</label>
           <select id="categorie" formControlName="categorie" class="form-control" required>
             <option value="">Sélectionnez une catégorie</option>
-            <option value="Art">Art</option>
-            <option value="Cuisine">Cuisine</option>
-            <option value="Bien_etre">Bien-être</option>
-            <option value="Enfants">Enfants</option>
-            <option value="DIY">DIY</option>
-            <option value="Autre">Autre</option>
+            <option value="ART">Art</option>
+            <option value="ECRITURE">Écriture</option>
+            <option value="JARDINAGE">Jardinage</option>
+            <option value="BIJOUX">Bijoux</option>
+            <option value="MAKEUP">Makeup</option>
+            <option value="YOGA">Yoga</option>
+            <option value="FITNESS">Fitness</option>
+            <option value="NATATION">Natation</option>
           </select>
           <div class="error-text" *ngIf="atelierForm.get('categorie')?.errors?.['required'] && atelierForm.get('categorie')?.touched">
             La catégorie est obligatoire
@@ -171,12 +173,12 @@
           <label for="coachId" class="required">Coach</label>
           <select id="coachId" formControlName="coachId" class="form-control" required>
             <option value="">Sélectionnez un coach</option>
-            <option *ngFor="let coach of coaches" [value]="coach.id">{{ coach.nom }} {{ coach.prenom }}</option>
+            <option *ngFor="let coach of filteredCoaches" [value]="coach.id">{{ coach.fullName || ((coach.prenom || '') + ' ' + (coach.nom || '')) }}</option>
           </select>
           <div class="error-text" *ngIf="atelierForm.get('coachId')?.errors?.['required'] && atelierForm.get('coachId')?.touched">
             Le coach est obligatoire
           </div>
-          <div class="error-text" *ngIf="coaches.length === 0">
+          <div class="error-text" *ngIf="filteredCoaches.length === 0">
             Aucun coach disponible pour le moment
           </div>
         </div>
@@ -215,32 +217,128 @@
 
     </form>
   </div>
-</div>
-
-<!-- Modal de réservation -->
-<div *ngIf="showReservationModal" class="modal-backdrop" (click)="closeReservationModalOnBackdrop($event)">
-  <div class="modal-content" (click)="$event.stopPropagation()">
-    <div class="modal-header">
-      <h3 class="modal-title">Réserver l'atelier</h3>
-      <button type="button" class="close-btn" (click)="closeReservationModal()">
+</div><!-- Modal de réservation (simplifié) -->
+<div *ngIf="showReservationModal" class="modal-backdrop reservation-modal-backdrop" (click)="closeReservationModalOnBackdrop($event)">
+  <div class="modal-content reservation-modal-content" (click)="$event.stopPropagation()">
+    
+    <!-- Header -->
+    <div class="reservation-modal-header">
+      <button type="button" class="reservation-close-btn" (click)="closeReservationModal()">
         <i class="fas fa-times"></i>
       </button>
-    </div>
-    <div class="modal-body">
-      <div class="form-group">
-        <label>Atelier</label>
-        <div class="info-text">{{ selectedAtelier?.nom }}</div>
+      <div class="header-content">
+        <div class="atelier-preview">
+          <img class="atelier-preview-image" [src]="getImageUrlByCategorie(selectedAtelier?.categorie || '')" alt="aperçu" />
+          <div class="atelier-preview-overlay">
+            <i class="fas fa-palette"></i>
+          </div>
+        </div>
+        <div class="header-text">
+          <h2 class="modal-title">Réserver l'atelier</h2>
+          <p class="modal-subtitle workshop-name">{{ selectedAtelier?.nom }}</p>
+          <p class="modal-subtitle coach-name" *ngIf="selectedAtelier?.coach || selectedAtelier?.coachId">
+            <i class="fas fa-user"></i>
+            <span *ngIf="selectedAtelier?.coach">
+              {{ selectedAtelier?.coach?.prenom || '' }} {{ selectedAtelier?.coach?.nom || '' }}
+            </span>
+            <span *ngIf="!selectedAtelier?.coach && selectedAtelier?.coachId">
+              Coach ID: {{ selectedAtelier?.coachId }} (Chargement...)
+            </span>
+          </p>
+          <!-- Debug info for development -->
+          <p class="modal-subtitle debug-info" *ngIf="selectedAtelier?.coachId && !selectedAtelier?.coach" style="font-size: 0.8rem; opacity: 0.7;">
+            Debug: Coach ID {{ selectedAtelier?.coachId }} - Données non chargées
+          </p>
+        </div>
       </div>
-      <div class="form-group">
-        <label for="reservation-date" class="required">Date de réservation</label>
-        <input id="reservation-date" type="date" [(ngModel)]="selectedDate" [min]="getTodayDate()" class="form-control" />
+    </div>
+
+    <!-- Body -->
+    <div class="reservation-modal-body">
+      
+      <!-- Date affichée -->
+      <div class="date-selection-section">
+        <div class="section-header">
+          <i class="far fa-calendar"></i>
+          <span>Date de l'atelier</span>
+        </div>
+        <p class="modal-info" *ngIf="selectedAtelier?.date">
+          <i class="far fa-clock"></i>
+          {{ selectedAtelier?.date | date: 'dd/MM/yyyy' }}
+        </p>
+        <p class="modal-info" *ngIf="!selectedAtelier?.date">
+          <i class="fas fa-info-circle"></i>
+          Date non définie
+        </p>
       </div>
+
+      <!-- Coach Section -->
+      <div class="coach-section" *ngIf="selectedAtelier?.coach || selectedAtelier?.coachId">
+        <div class="section-header">
+          <i class="fas fa-user-tie"></i>
+          <span>Coach de l'atelier</span>
+        </div>
+        <div class="coach-info-card" *ngIf="selectedAtelier?.coach">
+          <div class="coach-avatar">
+            <i class="fas fa-user"></i>
+          </div>
+          <div class="coach-details">
+            <h4 class="coach-name">{{ selectedAtelier?.coach?.prenom || '' }} {{ selectedAtelier?.coach?.nom || '' }}</h4>
+            <p class="coach-specialty" *ngIf="selectedAtelier?.coach?.specialite">
+              <i class="fas fa-star"></i>
+              Spécialité: {{ selectedAtelier?.coach?.specialite }}
+            </p>
+            <p class="coach-specialty" *ngIf="!selectedAtelier?.coach?.specialite">
+              <i class="fas fa-info-circle"></i>
+              Spécialité non définie
+            </p>
+          </div>
+        </div>
+        <div class="coach-info-card" *ngIf="!selectedAtelier?.coach && selectedAtelier?.coachId">
+          <div class="coach-avatar">
+            <i class="fas fa-user"></i>
+          </div>
+          <div class="coach-details">
+            <h4 class="coach-name">Coach ID: {{ selectedAtelier?.coachId }}</h4>
+            <p class="coach-specialty">
+              <i class="fas fa-info-circle"></i>
+              Informations du coach en cours de chargement...
+            </p>
+            <p class="coach-specialty" style="font-size: 0.8rem; color: #666;">
+              <i class="fas fa-exclamation-triangle"></i>
+              Les détails du coach ne sont pas encore chargés
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Description -->
+      <div class="description-section">
+        <div class="section-header">
+          <i class="fas fa-info-circle"></i>
+          <span>Description de l'atelier</span>
+        </div>
+        <p class="modal-info">
+          {{ selectedAtelier?.description || 'Pas de description disponible.' }}
+        </p>
+      </div>
+
     </div>
-    <div class="modal-footer">
-      <button class="btn btn-secondary" (click)="closeReservationModal()">Annuler</button>
-      <button class="btn btn-primary" (click)="createReservation()" [disabled]="!selectedDate">Confirmer</button>
+
+    <!-- Footer -->
+    <div class="reservation-modal-footer">
+      <button class="reservation-btn btn-secondary" (click)="closeReservationModal()">
+        <i class="fas fa-times"></i>
+        Fermer
+      </button>
+      <button class="reservation-btn btn-primary confirm-btn" (click)="createReservation()">
+        <i class="fas fa-check"></i>
+        Confirmer
+      </button>
     </div>
+
   </div>
 </div>
+
 
 <app-footer></app-footer>

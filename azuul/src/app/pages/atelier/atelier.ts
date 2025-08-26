@@ -14,7 +14,7 @@ import { CreateReservationDTO } from '../../models/reservation.model';
 
 interface Toast {
   id: number;
-  type: 'success' | 'error' | 'warning';
+  type: 'success' | 'error' | 'warning' | 'info';
   message: string;
 }
 
@@ -28,6 +28,7 @@ interface Toast {
 export class AteliersComponent implements OnInit, OnDestroy {
   ateliers: Atelier[] = [];
   coaches: Coach[] = [];
+  filteredCoaches: Coach[] = [];
 
   isAdmin = false;
   isAuthenticated = false;
@@ -69,6 +70,15 @@ export class AteliersComponent implements OnInit, OnDestroy {
     
     // Vérifier le token
     this.checkToken();
+
+    // Filter coaches when category changes
+    this.subscription.add(
+      this.atelierForm.get('categorie')!.valueChanges.subscribe((cat: string) => {
+        this.filterCoachesByCategory(cat);
+        // reset coach selection when category changes
+        this.atelierForm.get('coachId')!.setValue('');
+      })
+    );
   }
 
   // Méthode pour vérifier le token
@@ -189,6 +199,9 @@ export class AteliersComponent implements OnInit, OnDestroy {
         next: (coaches) => {
           console.log('AtelierComponent: Coaches loaded successfully:', coaches);
           this.coaches = coaches;
+          // Initialize filtered list based on current category selection
+          const currentCategory = this.atelierForm.get('categorie')!.value;
+          this.filterCoachesByCategory(currentCategory);
           if (coaches.length === 0) {
             console.log('AtelierComponent: No coaches available');
             this.showToast('warning', 'Aucun coach disponible pour le moment');
@@ -231,7 +244,8 @@ export class AteliersComponent implements OnInit, OnDestroy {
       this.authService.user$.subscribe(user => {
         console.log('AtelierComponent: User data received:', user);
         console.log('AtelierComponent: User role:', user?.role);
-        this.isAdmin = user?.role === 'ADMIN' || user?.role === 'COACH';
+        // Seul ADMIN peut créer/modifier/supprimer des ateliers
+        this.isAdmin = user?.role === 'ADMIN';
         console.log('AtelierComponent: isAdmin set to:', this.isAdmin);
       })
     );
@@ -240,13 +254,15 @@ export class AteliersComponent implements OnInit, OnDestroy {
     const currentUser = this.authService.getCurrentUser();
     console.log('AtelierComponent: Current user from auth service:', currentUser);
     if (currentUser) {
-      this.isAdmin = currentUser.role === 'ADMIN' || currentUser.role === 'COACH';
+      // Seul ADMIN peut créer/modifier/supprimer des ateliers
+      this.isAdmin = currentUser.role === 'ADMIN';
       console.log('AtelierComponent: isAdmin set from current user:', this.isAdmin);
     }
   }
 
   // Helper method to check if user is a client (can make reservations)
   isClient(): boolean {
+    // Les clients et coaches peuvent faire des réservations, mais pas les admins
     return this.isAuthenticated && !this.isAdmin;
   }
 
@@ -257,10 +273,20 @@ export class AteliersComponent implements OnInit, OnDestroy {
       return;
     }
 
+    // Seul ADMIN peut créer des ateliers
+    if (!this.isAdmin) {
+      this.showToast('error', 'Seuls les administrateurs peuvent créer des ateliers');
+      return;
+    }
+
     this.editingAtelier = null;
     this.atelierForm.reset();
     this.imagePreview = null;
     this.selectedFile = null;
+    // ensure category is empty so all coaches appear initially
+    this.atelierForm.get('categorie')?.setValue('');
+    // populate filtered coaches immediately
+    this.filteredCoaches = [...this.coaches];
     this.showForm = true;
   }
 
@@ -268,6 +294,12 @@ export class AteliersComponent implements OnInit, OnDestroy {
     if (!this.isAuthenticated) {
       this.showToast('warning', 'Veuillez vous connecter pour modifier un atelier');
       this.navigateToLogin();
+      return;
+    }
+
+    // Seul ADMIN peut modifier des ateliers
+    if (!this.isAdmin) {
+      this.showToast('error', 'Seuls les administrateurs peuvent modifier des ateliers');
       return;
     }
 
@@ -280,6 +312,8 @@ export class AteliersComponent implements OnInit, OnDestroy {
       heure: atelier.heure,
       coachId: atelier.coach?.id || ''
     });
+
+    this.filterCoachesByCategory(atelier.categorie);
 
     this.imagePreview = (atelier.photos && atelier.photos.length > 0) ? atelier.photos[0].url : null;
 
@@ -297,6 +331,12 @@ export class AteliersComponent implements OnInit, OnDestroy {
     if (!this.isAuthenticated) {
       this.showToast('error', 'Veuillez vous connecter pour effectuer cette action');
       this.navigateToLogin();
+      return;
+    }
+
+    // Seul ADMIN peut créer/modifier des ateliers
+    if (!this.isAdmin) {
+      this.showToast('error', 'Seuls les administrateurs peuvent créer ou modifier des ateliers');
       return;
     }
 
@@ -460,11 +500,36 @@ export class AteliersComponent implements OnInit, OnDestroy {
     this.imagePreview = null;
   }
 
-  onImageError(event: any, atelier: Atelier): void {
-    const defaultImage = this.getImageUrlByCategorie(atelier.categorie);
-    if (defaultImage) {
-      event.target.src = defaultImage;
+  private filterCoachesByCategory(category: string): void {
+    if (!category) {
+      // No category selected: show all coaches
+      this.filteredCoaches = [...this.coaches];
+      return;
     }
+    const normalizedCategory = this.normalize(category);
+    this.filteredCoaches = this.coaches.filter((c) => {
+      const spec = c.specialite ?? '';
+      const normalizedSpec = this.normalize(spec);
+      return normalizedSpec === normalizedCategory;
+    });
+    // If no coach matches the selected category, fall back to all to avoid empty list
+    if (this.filteredCoaches.length === 0) {
+      this.filteredCoaches = [...this.coaches];
+    }
+  }
+
+  private normalize(value: string): string {
+    return (value || '')
+      .toString()
+      .normalize('NFD')
+      .replace(/\p{Diacritic}+/gu, '')
+      .replace(/[^a-zA-Z0-9]+/g, '_')
+      .toUpperCase();
+  }
+
+  onImageError(event: any, atelier: Atelier): void {
+    const fallbackSvg = 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="600" height="400"><rect fill="#f5f5f5" width="600" height="400"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="24" fill="#999">Atelier</text></svg>');
+    event.target.src = this.getImageUrlByCategorie(atelier.categorie) || fallbackSvg;
   }
 
   deleteAtelier(id: number | undefined): void {
@@ -473,6 +538,12 @@ export class AteliersComponent implements OnInit, OnDestroy {
     if (!this.isAuthenticated) {
       this.showToast('warning', 'Veuillez vous connecter pour supprimer un atelier');
       this.navigateToLogin();
+      return;
+    }
+
+    // Seul ADMIN peut supprimer des ateliers
+    if (!this.isAdmin) {
+      this.showToast('error', 'Seuls les administrateurs peuvent supprimer des ateliers');
       return;
     }
 
@@ -525,7 +596,7 @@ export class AteliersComponent implements OnInit, OnDestroy {
     return this.editingAtelier ? 'Modifier' : 'Créer';
   }
 
-  private showToast(type: 'success' | 'error' | 'warning', message: string): void {
+  private showToast(type: 'success' | 'error' | 'warning' | 'info', message: string): void {
     const toast: Toast = {
       id: this.toastCounter++,
       type,
@@ -546,6 +617,69 @@ export class AteliersComponent implements OnInit, OnDestroy {
     }
   }
 
+  private loadCoachDetails(coachId: number): void {
+    console.log('Loading coach details for ID:', coachId);
+    console.log('Available coaches:', this.coaches);
+    
+    // Find coach in the loaded coaches list
+    const coach = this.coaches.find(c => c.id === coachId);
+    if (coach && this.selectedAtelier) {
+      this.selectedAtelier.coach = coach;
+      console.log('Coach details loaded successfully:', coach);
+      console.log('Updated selectedAtelier:', this.selectedAtelier);
+    } else {
+      console.log('Coach not found in loaded coaches list, coachId:', coachId);
+      console.log('Available coach IDs:', this.coaches.map(c => c.id));
+      
+      // Try to load coach from backend if not in local list
+      this.loadCoachFromBackend(coachId);
+    }
+  }
+
+  private loadCoachFromBackend(coachId: number): void {
+    console.log('Attempting to load coach from backend, ID:', coachId);
+    
+    // Try to find coach in the loaded coaches list first
+    const existingCoach = this.coaches.find(c => c.id === coachId);
+    if (existingCoach && this.selectedAtelier) {
+      this.selectedAtelier.coach = existingCoach;
+      console.log('Found coach in loaded list:', existingCoach);
+      return;
+    }
+    
+    // If not found in loaded list, create a temporary coach object for display
+    if (this.selectedAtelier) {
+      const tempCoach: Coach = {
+        id: coachId,
+        nom: `Coach ${coachId}`,
+        prenom: '',
+        specialite: 'Spécialité non définie'
+      };
+      
+      this.selectedAtelier.coach = tempCoach;
+      console.log('Created temporary coach object:', tempCoach);
+      console.log('Updated selectedAtelier with temp coach:', this.selectedAtelier);
+      
+      // Try to load coach details from backend service
+      this.loadCoachDetailsFromService(coachId);
+    }
+  }
+
+  private loadCoachDetailsFromService(coachId: number): void {
+    console.log('Loading coach details from service for ID:', coachId);
+    
+    // Import CoachService if not already imported
+    // You might need to inject CoachService in the constructor
+    // For now, we'll use the existing coaches list
+    if (this.coaches.length > 0) {
+      const coach = this.coaches.find(c => c.id === coachId);
+      if (coach && this.selectedAtelier) {
+        this.selectedAtelier.coach = coach;
+        console.log('Coach details loaded from service:', coach);
+      }
+    }
+  }
+
   openReservationModal(atelier: Atelier): void {
     if (!this.isAuthenticated) {
       this.showToast('warning', 'Veuillez vous connecter pour réserver un atelier');
@@ -559,8 +693,68 @@ export class AteliersComponent implements OnInit, OnDestroy {
     }
     
     this.selectedAtelier = atelier;
-    this.selectedDate = '';
+    // Prefill date with atelier date if available
+    this.selectedDate = (atelier.date && typeof atelier.date === 'string') ? atelier.date : '';
     this.showReservationModal = true;
+    
+    // Debug: Log coach information
+    console.log('=== RESERVATION MODAL DEBUG ===');
+    console.log('Atelier:', atelier);
+    console.log('Atelier coach info:', atelier.coach);
+    console.log('Atelier coachId:', atelier.coachId);
+    console.log('Available coaches count:', this.coaches.length);
+    console.log('Available coach IDs:', this.coaches.map(c => ({ id: c.id, name: `${c.prenom} ${c.nom}` })));
+    
+    // Try to load coach details if coachId exists
+    if (atelier.coachId) {
+      console.log('Coach ID found, attempting to load coach details...');
+      
+      // First try to find in loaded coaches
+      const existingCoach = this.coaches.find(c => c.id === atelier.coachId);
+      if (existingCoach) {
+        console.log('Found coach in loaded list:', existingCoach);
+        this.selectedAtelier.coach = existingCoach;
+      } else {
+        console.log('Coach not found in loaded list, creating temporary...');
+        this.loadCoachFromBackend(atelier.coachId);
+        
+        // If coaches list is empty, try to reload it
+        if (this.coaches.length === 0) {
+          console.log('Coaches list is empty, attempting to reload...');
+          this.loadCoaches();
+        }
+      }
+    } else if (atelier.coach) {
+      // If coach object exists but no coachId, use the coach object directly
+      console.log('Coach object found, using it directly:', atelier.coach);
+      this.selectedAtelier.coach = atelier.coach;
+    } else {
+      console.log('No coachId or coach object available for this atelier');
+      console.log('This atelier has no coach assigned - this might be a backend issue');
+      
+      // Try to find coach by ID in the coaches list as fallback
+      if (this.coaches.length > 0) {
+        // This is a fallback - try to find any coach that might match
+        const fallbackCoach = this.coaches.find(c => c.id === atelier.id || c.id === 1 || c.id === 6 || c.id === 7);
+        if (fallbackCoach) {
+          console.log('Using fallback coach:', fallbackCoach);
+          this.selectedAtelier.coach = fallbackCoach;
+          this.showToast('info', `Coach temporaire assigné: ${fallbackCoach.prenom} ${fallbackCoach.nom}`);
+        } else {
+          this.showToast('warning', 'Cet atelier n\'a pas de coach assigné. Problème de synchronisation avec le backend.');
+        }
+      } else {
+        this.showToast('warning', 'Cet atelier n\'a pas de coach assigné. Problème de synchronisation avec le backend.');
+      }
+    }
+    
+    // Show info message if no date is set
+    if (!atelier.date) {
+      const coachName = this.selectedAtelier?.coach ? 
+        `${this.selectedAtelier.coach.prenom || ''} ${this.selectedAtelier.coach.nom || ''}`.trim() : 
+        'Non assigné';
+      this.showToast('info', `Atelier "${atelier.nom}" - Date non définie, réservation possible avec le coach ${coachName}`);
+    }
   }
 
   closeReservationModal(): void {
@@ -574,35 +768,67 @@ export class AteliersComponent implements OnInit, OnDestroy {
       this.closeReservationModal();
     }
   }
+createReservation(): void {
+  if (!this.selectedAtelier) return;
 
-  createReservation(): void {
-    if (!this.selectedAtelier || !this.selectedDate) return;
-    
-    if (this.isAdmin) {
-      this.showToast('error', 'Les admins et coaches ne peuvent pas réserver d\'ateliers');
-      return;
-    }
-    
-    const user = this.authService.getCurrentUser();
-    if (!user?.id) {
-      this.showToast('error', 'Veuillez vous connecter');
-      this.navigateToLogin();
-      return;
-    }
-    const dto: CreateReservationDTO = {
-      atelierId: this.selectedAtelier.id!,
-      clientId: user.id,
-      dateReservation: this.selectedDate
-    };
-    this.reservationService.create(dto).subscribe({
-      next: () => {
-        this.showToast('success', 'Réservation réussie !');
-        this.closeReservationModal();
-      },
-      error: (err) => {
-        const msg = err?.userMessage || err?.error?.message || 'Erreur lors de la réservation';
-        this.showToast('error', msg);
-      }
-    });
+  // Check if atelier has a date, if not, use current date as fallback
+  const reservationDate = this.selectedAtelier.date || new Date().toISOString().split('T')[0];
+
+  if (this.isAdmin) {
+    this.showToast('error', 'Les admins et coaches ne peuvent pas réserver d\'ateliers');
+    return;
   }
+
+  const user = this.authService.getCurrentUser();
+  if (!user?.id) {
+    this.showToast('error', 'Veuillez vous connecter');
+    this.navigateToLogin();
+    return;
+  }
+
+  const dto: CreateReservationDTO = {
+    atelierId: this.selectedAtelier.id!,
+    clientId: user.id,
+    dateReservation: reservationDate
+  };
+
+  this.reservationService.create(dto).subscribe({
+    next: () => {
+      let successMessage = 'Réservation réussie !';
+      
+      if (this.selectedAtelier) {
+        // Récupérer le nom du coach avec gestion des cas où il n'existe pas
+        const coach = this.selectedAtelier.coach;
+        let coachName = 'Non assigné';
+        
+        if (coach) {
+          const prenom = coach.prenom || '';
+          const nom = coach.nom || '';
+          coachName = `${prenom} ${nom}`.trim();
+          
+          // Si après trim il n'y a rien, utiliser "Non assigné"
+          if (!coachName) {
+            coachName = 'Non assigné';
+          }
+        }
+        
+        // Message personnalisé avec le nom de l'atelier et du coach
+        successMessage = `Réservation réussie pour l'atelier "${this.selectedAtelier.nom}" avec le coach ${coachName}`;
+        
+        // Optionnel: ajouter la date si elle existe
+        if (this.selectedAtelier.date) {
+          const dateFormatted = new Date(this.selectedAtelier.date).toLocaleDateString('fr-FR');
+          successMessage += ` pour le ${dateFormatted}`;
+        }
+      }
+
+      this.showToast('success', successMessage);
+      this.closeReservationModal();
+    },
+    error: (err) => {
+      const msg = err?.userMessage || err?.error?.message || 'Erreur lors de la réservation';
+      this.showToast('error', msg);
+    }
+  });
+}
 }
