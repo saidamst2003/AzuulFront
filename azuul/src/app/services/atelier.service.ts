@@ -148,6 +148,31 @@ export class AtelierService {
     );
   }
 
+  // Attempt to get ateliers for a specific coach directly from backend (preferred when available)
+  getByCoachId(coachId: number): Observable<Atelier[]> {
+    const url = `${this.API_BASE_URL}/coach/${coachId}`;
+    return this.http.get<Atelier[]>(url, { headers: this.getAuthHeaders() }).pipe(
+      tap(data => {
+        console.log(`Raw ateliers for coach ${coachId}:`, data);
+        const processed = data.map(atelier => {
+          // Ensure coachId is set since backend endpoint is scoped to this coach
+          if (!atelier.coachId) {
+            atelier.coachId = coachId;
+          }
+          return this.processAtelierData(atelier);
+        });
+        // Ensure coach linkage if cache available
+        if (this.coachesCache.length > 0) {
+          const enriched = this.enrichAteliersWithCoaches(processed, this.coachesCache);
+          this.ateliersSubject.next(enriched);
+        } else {
+          this.ateliersSubject.next(processed);
+        }
+      }),
+      catchError(this.handleError)
+    );
+  }
+
   getById(id: number): Observable<Atelier> {
     return this.http.get<Atelier>(`${this.API_BASE_URL}/${id}`, { headers: this.getAuthHeaders() }).pipe(
       tap(atelier => this.processAtelierData(atelier)),

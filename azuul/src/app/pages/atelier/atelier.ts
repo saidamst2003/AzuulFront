@@ -31,6 +31,7 @@ export class AteliersComponent implements OnInit, OnDestroy {
   filteredCoaches: Coach[] = [];
 
   isAdmin = false;
+  isCoach = false;
   isAuthenticated = false;
   error: string | null = null;
   showForm = false;
@@ -124,6 +125,10 @@ export class AteliersComponent implements OnInit, OnDestroy {
           this.coaches = []; // Clear coaches when not authenticated
         } else {
           console.log('AtelierComponent: User is authenticated, loading data...');
+          // Determine role flags
+          const u = this.authService.getCurrentUser();
+          this.isAdmin = u?.role === 'ADMIN';
+          this.isCoach = u?.role === 'COACH';
           // Recharger les données si l'utilisateur vient de se connecter
           this.loadAteliers();
           this.loadCoaches(); // Reload coaches when user becomes authenticated
@@ -138,6 +143,9 @@ export class AteliersComponent implements OnInit, OnDestroy {
     
     // If initially authenticated, load coaches immediately
     if (initialAuthState) {
+      const u = this.authService.getCurrentUser();
+      this.isAdmin = u?.role === 'ADMIN';
+      this.isCoach = u?.role === 'COACH';
       this.loadCoaches();
     }
   }
@@ -163,10 +171,26 @@ export class AteliersComponent implements OnInit, OnDestroy {
   }
 
   loadAteliers(): void {
+    const currentUser = this.authService.getCurrentUser();
+    const source$ = (this.isCoach && currentUser?.id)
+      ? this.atelierService.getByCoachId(currentUser.id)
+      : this.atelierService.getAll();
+
     this.subscription.add(
-      this.atelierService.getAll().subscribe({
+      source$.subscribe({
         next: (ateliers) => {
-          this.ateliers = ateliers;
+          // Enforce coach-specific view if user is a coach
+          if (this.isCoach) {
+            const currentUser = this.authService.getCurrentUser();
+            const coachId = currentUser?.id;
+            const filtered = (ateliers || []).filter(a => a.coachId === coachId || a.coach?.id === coachId);
+            this.ateliers = filtered;
+            if ((ateliers?.length || 0) > 0 && filtered.length === 0) {
+              this.showToast('info', 'Aucun atelier assigné à votre compte.');
+            }
+          } else {
+            this.ateliers = ateliers;
+          }
           this.error = null;
         },
         error: (error) => {
@@ -190,6 +214,13 @@ export class AteliersComponent implements OnInit, OnDestroy {
     // Check if user is authenticated before loading coaches
     if (!this.isAuthenticated) {
       console.log('AtelierComponent: User not authenticated, skipping coaches load');
+      this.coaches = [];
+      return;
+    }
+
+    // Coaches do not need the global coaches list; skip to avoid 403
+    if (this.isCoach) {
+      console.log('AtelierComponent: User is COACH, skipping global coaches load');
       this.coaches = [];
       return;
     }
@@ -246,7 +277,9 @@ export class AteliersComponent implements OnInit, OnDestroy {
         console.log('AtelierComponent: User role:', user?.role);
         // Seul ADMIN peut créer/modifier/supprimer des ateliers
         this.isAdmin = user?.role === 'ADMIN';
+        this.isCoach = user?.role === 'COACH';
         console.log('AtelierComponent: isAdmin set to:', this.isAdmin);
+        console.log('AtelierComponent: isCoach set to:', this.isCoach);
       })
     );
     
@@ -256,7 +289,9 @@ export class AteliersComponent implements OnInit, OnDestroy {
     if (currentUser) {
       // Seul ADMIN peut créer/modifier/supprimer des ateliers
       this.isAdmin = currentUser.role === 'ADMIN';
+      this.isCoach = currentUser.role === 'COACH';
       console.log('AtelierComponent: isAdmin set from current user:', this.isAdmin);
+      console.log('AtelierComponent: isCoach set from current user:', this.isCoach);
     }
   }
 
@@ -592,6 +627,9 @@ export class AteliersComponent implements OnInit, OnDestroy {
     }
     if (!this.isAuthenticated) {
       return 'Connectez-vous d\'abord';
+    }
+    if (this.isCoach) {
+      return 'Réserver';
     }
     return this.editingAtelier ? 'Modifier' : 'Créer';
   }
