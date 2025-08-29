@@ -93,8 +93,11 @@
             </span>
           </div>
           <button *ngIf="isClient()" class="workshop-btn" (click)="openReservationModal(atelier)">Réserver <i class="fas fa-arrow-right"></i></button>
+          <div *ngIf="!isClient() && isAuthenticated" class="reservation-info">
+            
+          </div>
           <div *ngIf="!isAuthenticated" class="reservation-info">
-            <small class="text-muted">Connectez-vous pour réserver</small>
+        
           </div>
         </div>
       </div>
@@ -331,7 +334,7 @@
         <i class="fas fa-times"></i>
         Fermer
       </button>
-      <button class="reservation-btn btn-primary confirm-btn" (click)="createReservation()">
+      <button class="reservation-btn btn-primary confirm-btn" (click)="createReservation()" [disabled]="!isClient()">
         <i class="fas fa-check"></i>
         Confirmer
       </button>

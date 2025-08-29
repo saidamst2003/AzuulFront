@@ -297,8 +297,8 @@ export class AteliersComponent implements OnInit, OnDestroy {
 
   // Helper method to check if user is a client (can make reservations)
   isClient(): boolean {
-    // Les clients et coaches peuvent faire des réservations, mais pas les admins
-    return this.isAuthenticated && !this.isAdmin;
+    // Seuls les clients peuvent réserver (ni admin, ni coach)
+    return this.isAuthenticated && !this.isAdmin && !this.isCoach;
   }
 
   openCreateForm(): void {
@@ -812,7 +812,7 @@ createReservation(): void {
   // Check if atelier has a date, if not, use current date as fallback
   const reservationDate = this.selectedAtelier.date || new Date().toISOString().split('T')[0];
 
-  if (this.isAdmin) {
+  if (this.isAdmin || this.isCoach) {
     this.showToast('error', 'Les admins et coaches ne peuvent pas réserver d\'ateliers');
     return;
   }
