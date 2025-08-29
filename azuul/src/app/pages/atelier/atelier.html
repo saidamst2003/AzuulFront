@@ -13,8 +13,9 @@
 
 <section class="hero-section">
   <div class="hero-content">
-    <h1>Nos Ateliers Créatifs</h1>
-    <p>Découvrez nos ateliers uniques où créativité et bien-être se rencontrent pour des moments inoubliables</p>
+    <h1 *ngIf="!isCoach">Nos Ateliers Créatifs</h1>
+    <h1 *ngIf="isCoach">Mon Ateliers Créatifs</h1>
+    <p *ngIf="!isCoach">Découvrez nos ateliers uniques où créativité et bien-être se rencontrent pour des moments inoubliables</p>
   </div>
 </section>
 
