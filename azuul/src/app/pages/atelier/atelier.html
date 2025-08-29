@@ -61,11 +61,11 @@
       </div>
 
       <!-- Actions Admin (Modifier / Supprimer) -->
-      <div *ngIf="isAdmin || true" class="admin-card-actions">
-        <button class="icon-btn" (click)="openEditForm(atelier)" title="Modifier">
+      <div *ngIf="isAdmin" class="admin-card-actions">
+        <button class="icon-btn" (click)="$event.stopPropagation(); openEditForm(atelier)" title="Modifier">
           <i class="fas fa-edit"></i>
         </button>
-        <button class="icon-btn" (click)="deleteAtelier(atelier.id)" title="Supprimer">
+        <button class="icon-btn" (click)="$event.stopPropagation(); deleteAtelier(atelier.id)" title="Supprimer">
           <i class="fas fa-trash"></i>
         </button>
       </div>
