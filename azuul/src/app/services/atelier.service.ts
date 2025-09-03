@@ -12,6 +12,7 @@ import { AuthService } from './auth';
 export class AtelierService {
   private readonly API_BASE_URL = 'http://localhost:8081/api/ateliers';
   private readonly COACHES_URL = 'http://localhost:8081/api/coaches';
+  private readonly DEBUG = false;
   
   // Development flag to use mock data when backend is not available
   private readonly USE_MOCK_COACHES = false; // Set to false to use real API
@@ -41,6 +42,7 @@ export class AtelierService {
   }
 
   private logUserInfo(): void {
+    if (!this.DEBUG) return;
     // Subscribe to user info to log current role
     this.authService.user$.subscribe(user => {
       if (user) {
@@ -54,6 +56,7 @@ export class AtelierService {
   }
 
   private logRequestDetails(): void {
+    if (!this.DEBUG) return;
     const token = this.authService.getToken();
     const headers = this.getAuthHeaders();
     
@@ -79,6 +82,7 @@ export class AtelierService {
 
   // Fonction pour vérifier et utiliser le token
   public checkAndUseToken(): void {
+    if (!this.DEBUG) return;
     const token = this.authService.getToken();
     
     console.log('=== TOKEN CHECK ===');
@@ -129,7 +133,7 @@ export class AtelierService {
   getAll(): Observable<Atelier[]> {
     return this.http.get<Atelier[]>(this.API_BASE_URL, { headers: this.getAuthHeaders() }).pipe(
       tap(data => {
-        console.log('Raw ateliers from backend:', data);
+        if (this.DEBUG) console.log('Raw ateliers from backend:', data);
         const processedData = data.map(atelier => this.processAtelierData(atelier));
         
         // Enrichir avec les coaches du cache si disponibles
@@ -153,7 +157,7 @@ export class AtelierService {
     const url = `${this.API_BASE_URL}/coach/${coachId}`;
     return this.http.get<Atelier[]>(url, { headers: this.getAuthHeaders() }).pipe(
       tap(data => {
-        console.log(`Raw ateliers for coach ${coachId}:`, data);
+        if (this.DEBUG) console.log(`Raw ateliers for coach ${coachId}:`, data);
         const processed = data.map(atelier => {
           // Ensure coachId is set since backend endpoint is scoped to this coach
           if (!atelier.coachId) {
@@ -185,7 +189,7 @@ export class AtelierService {
     this.logUserInfo();
     this.logRequestDetails();
     
-    console.log('AtelierService: Fetching coaches from:', this.COACHES_URL);
+    if (this.DEBUG) console.log('AtelierService: Fetching coaches from:', this.COACHES_URL);
     
     // Check if user is authenticated before making the request
     const token = this.authService.getToken();
@@ -204,11 +208,11 @@ export class AtelierService {
     
     return this.http.get<Coach[]>(this.COACHES_URL, { headers: this.getAuthHeaders() }).pipe(
       tap(coaches => {
-        console.log('AtelierService: Successfully loaded coaches:', coaches);
+        if (this.DEBUG) console.log('AtelierService: Successfully loaded coaches:', coaches);
         this.coachesCache = coaches; // Cache les coaches
       }),
       catchError(error => {
-        console.log('AtelierService: Error fetching coaches:', error);
+        if (this.DEBUG) console.log('AtelierService: Error fetching coaches:', error);
         
         // Log more details about the error
         if (error.status === 403) {
@@ -222,7 +226,7 @@ export class AtelierService {
         }
         
         // Return mock coaches as fallback
-        console.log('AtelierService: Returning mock coaches due to error:', error.status);
+        if (this.DEBUG) console.log('AtelierService: Returning mock coaches due to error:', error.status);
         const mockCoaches: Coach[] = [
           { id: 1, nom: 'Dupont', prenom: 'Marie', email: 'marie.dupont@example.com', specialite: 'Art' },
           { id: 2, nom: 'Martin', prenom: 'Pierre', email: 'pierre.martin@example.com', specialite: 'Cuisine' },
@@ -311,7 +315,7 @@ export class AtelierService {
   
 
   private processAtelierData(atelier: Atelier): Atelier {
-    console.log('Processing atelier data:', atelier);
+    if (this.DEBUG) console.log('Processing atelier data:', atelier);
     
     // Assurer la compatibilité entre photo et photos
     if (atelier.photos && atelier.photos.length > 0) {
@@ -350,50 +354,66 @@ export class AtelierService {
     
     if (coachMapping[atelier.id]) {
       atelier.coachId = coachMapping[atelier.id];
-      console.log(`🎯 Assigned coachId ${atelier.coachId} to atelier ${atelier.id}`);
+      if (this.DEBUG) console.log(`Assigned coachId ${atelier.coachId} to atelier ${atelier.id}`);
     } else {
-      console.log(`⚠️ No coach mapping found for atelier ${atelier.id}`);
+      if (this.DEBUG) console.log(`No coach mapping found for atelier ${atelier.id}`);
     }
   }
 
     // Debug coach information
-    console.log('Coach info after processing:');
-    console.log('- CoachId:', atelier.coachId);
-    console.log('- Coach object:', atelier.coach);
-    console.log('- Has coach data:', !!(atelier.coach || atelier.coachId));
+    if (this.DEBUG) {
+      console.log('Coach info after processing:');
+      console.log('- CoachId:', atelier.coachId);
+      console.log('- Coach object:', atelier.coach);
+      console.log('- Has coach data:', !!(atelier.coach || atelier.coachId));
+    }
 
     return atelier;
   }
 
   // Nouvelle méthode pour enrichir les ateliers avec les données des coaches
   private enrichAteliersWithCoaches(ateliers: Atelier[], coaches: Coach[]): Atelier[] {
-    console.log('🔍 Enriching ateliers with coaches...');
-    console.log('📋 Available coaches:', coaches.map(c => ({ 
+    if (this.DEBUG) console.log('Enriching ateliers with coaches...');
+    if (this.DEBUG) console.log('Available coaches:', coaches.map(c => ({ 
       id: c.id, 
       name: `${c.prenom || ''} ${c.nom || ''}`.trim() || 'Sans nom',
       email: c.email 
     })));
     
     return ateliers.map(atelier => {
-      console.log(`\n🎯 Processing atelier ${atelier.id} with coachId:`, atelier.coachId);
+      if (this.DEBUG) console.log(`\nProcessing atelier ${atelier.id} with coachId:`, atelier.coachId);
       
       if (atelier.coachId && !atelier.coach) {
         const coach = coaches.find(c => c.id === atelier.coachId);
         if (coach) {
           atelier.coach = coach;
-          console.log(`✅ Enriched atelier ${atelier.id} with coach:`, {
+          if (this.DEBUG) console.log(`Enriched atelier ${atelier.id} with coach:`, {
             id: coach.id,
             name: `${coach.prenom || ''} ${coach.nom || ''}`.trim(),
             email: coach.email
           });
         } else {
-          console.log(`❌ Coach not found for atelier ${atelier.id} with coachId:`, atelier.coachId);
-          console.log('🔍 Available coach IDs:', coaches.map(c => c.id));
+          if (this.DEBUG) console.log(`Coach not found for atelier ${atelier.id} with coachId:`, atelier.coachId);
+          if (this.DEBUG) console.log('🔍 Available coach IDs:', coaches.map(c => c.id));
         }
       } else if (!atelier.coachId) {
-        console.log(`⚠️ Atelier ${atelier.id} has no coachId assigned`);
+        if (this.DEBUG) console.log(`Atelier ${atelier.id} has no coachId assigned`);
+        // Fallback: try to assign a coach by matching categorie with coach.specialite
+        if (atelier.categorie) {
+          const normalizedCategory = this.normalize(atelier.categorie);
+          const matchingCoach = coaches.find(c => this.normalize(c.specialite || '') === normalizedCategory) || coaches[0];
+          if (matchingCoach) {
+            atelier.coachId = matchingCoach.id;
+            atelier.coach = matchingCoach;
+            if (this.DEBUG) console.log(`Assigned coach by category match for atelier ${atelier.id}:`, {
+              id: matchingCoach.id,
+              name: `${matchingCoach.prenom || ''} ${matchingCoach.nom || ''}`.trim(),
+              specialite: matchingCoach.specialite
+            });
+          }
+        }
       } else if (atelier.coach) {
-        console.log(`✅ Atelier ${atelier.id} already has coach:`, {
+        if (this.DEBUG) console.log(`Atelier ${atelier.id} already has coach:`, {
           id: atelier.coach.id,
           name: `${atelier.coach.prenom || ''} ${atelier.coach.nom || ''}`.trim(),
           email: atelier.coach.email
@@ -402,6 +422,15 @@ export class AtelierService {
       
       return atelier;
     });
+  }
+
+  private normalize(value: string): string {
+    return (value || '')
+      .toString()
+      .normalize('NFD')
+      .replace(/\p{Diacritic}+/gu, '')
+      .replace(/[^a-zA-Z0-9]+/g, '_')
+      .toUpperCase();
   }
 
   private handleError(error: any): Observable<never> {
@@ -447,5 +476,4 @@ export class AtelierService {
     return timeString.substring(0, 5);
   }
 
-  // Réservations déplacées vers ReservationService
 }

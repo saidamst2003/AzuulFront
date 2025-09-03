@@ -1,18 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { PauseCafee } from './pause-cafee';
+import { MesCoach } from './mes-coach';
 
 describe('PauseCafee', () => {
-  let component: PauseCafee;
-  let fixture: ComponentFixture<PauseCafee>;
+  let component: MesCoach;
+  let fixture: ComponentFixture<MesCoach>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [PauseCafee]
+      imports: [MesCoach]
     })
     .compileComponents();
 
-    fixture = TestBed.createComponent(PauseCafee);
+    fixture = TestBed.createComponent(MesCoach);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

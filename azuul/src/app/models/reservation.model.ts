@@ -40,4 +40,7 @@ export interface ReservationResponseDTO {
   atelierId: number;
   atelierNom: string;
   atelierDescription: string;
+  coachId?: number;
+  coachNom?: string;
+  coachSpecialite?: string;
 }

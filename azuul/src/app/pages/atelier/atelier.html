@@ -24,6 +24,10 @@
   <button class="admin-action-btn" (click)="openCreateForm()">
     <i class="fas fa-plus"></i> Créer un Atelier
   </button>
+  <button class="admin-action-btn fix-coaches-btn" (click)="fixAllAteliersWithoutCoaches()" 
+          *ngIf="hasAteliersWithoutCoaches()">
+    <i class="fas fa-wrench"></i> Corriger les Ateliers sans Coach
+  </button>
 </div>
 
 
@@ -80,7 +84,14 @@
             <i class="fas fa-tag"></i> {{ atelier.categorie }}
           </span>
           <span class="workshop-coach" *ngIf="atelier.coach">
-            <i class="fas fa-user"></i> {{ atelier.coach.nom }} {{ atelier.coach.prenom }}
+            <i class="fas fa-user"></i> {{ atelier.coach.fullName || ((atelier.coach.prenom || '') + ' ' + (atelier.coach.nom || '')) }}
+          </span>
+          <span class="workshop-coach no-coach" *ngIf="!atelier.coach && isAdmin">
+            <i class="fas fa-exclamation-triangle"></i> Aucun coach assigné
+            <button class="assign-coach-btn" (click)="assignFirstAvailableCoach(atelier)" 
+                    *ngIf="coaches.length > 0" title="Assigner le premier coach disponible">
+              <i class="fas fa-user-plus"></i>
+            </button>
           </span>
         </div>
 
@@ -221,7 +232,8 @@
 
     </form>
   </div>
-</div><!-- Modal de réservation (simplifié) -->
+</div>
+<!-- Modal de réservation (simplifié) -->
 <div *ngIf="showReservationModal" class="modal-backdrop reservation-modal-backdrop" (click)="closeReservationModalOnBackdrop($event)">
   <div class="modal-content reservation-modal-content" (click)="$event.stopPropagation()">
     
@@ -240,41 +252,38 @@
         <div class="header-text">
           <h2 class="modal-title">Réserver l'atelier</h2>
           <p class="modal-subtitle workshop-name">{{ selectedAtelier?.nom }}</p>
-          <p class="modal-subtitle coach-name" *ngIf="selectedAtelier?.coach || selectedAtelier?.coachId">
-            <i class="fas fa-user"></i>
-            <span *ngIf="selectedAtelier?.coach">
-              {{ selectedAtelier?.coach?.prenom || '' }} {{ selectedAtelier?.coach?.nom || '' }}
-            </span>
-            <span *ngIf="!selectedAtelier?.coach && selectedAtelier?.coachId">
-              Coach ID: {{ selectedAtelier?.coachId }} (Chargement...)
-            </span>
-          </p>
-          <!-- Debug info for development -->
-          <p class="modal-subtitle debug-info" *ngIf="selectedAtelier?.coachId && !selectedAtelier?.coach" style="font-size: 0.8rem; opacity: 0.7;">
-            Debug: Coach ID {{ selectedAtelier?.coachId }} - Données non chargées
-          </p>
+          <div class="coach-header-info" *ngIf="selectedAtelier?.coach || selectedAtelier?.coachId">
+            <p class="modal-subtitle coach-name">
+              <i class="fas fa-user-tie"></i>
+              <span *ngIf="selectedAtelier?.coach as coach">
+                Coach: {{ coach.fullName || (((coach.prenom || '') + ' ' + (coach.nom || ''))) }}
+              </span>
+              <span *ngIf="!selectedAtelier?.coach && selectedAtelier?.coachId">
+                Coach ID: {{ selectedAtelier?.coachId }} (Chargement...)
+              </span>
+            </p>
+            <p class="coach-specialty-header" *ngIf="selectedAtelier?.coach?.specialite">
+              <i class="fas fa-star"></i>
+              {{ selectedAtelier?.coach?.specialite }}
+            </p>
+          </div>
         </div>
       </div>
     </div>
 
     <!-- Body -->
     <div class="reservation-modal-body">
-      
-      <!-- Date affichée -->
-      <div class="date-selection-section">
-        <div class="section-header">
-          <i class="far fa-calendar"></i>
-          <span>Date de l'atelier</span>
+        <div class="atelier-date-info" *ngIf="selectedAtelier?.date">
+          <div class="section-header" style="margin-top: 20px; margin-bottom: 15px;">
+            <i class="far fa-clock"></i>
+            <span>Date de l'atelier</span>
+          </div>
+          <p class="modal-info">
+            <i class="far fa-calendar"></i>
+            {{ selectedAtelier?.date | date: 'dd/MM/yyyy' }}
+          </p>
         </div>
-        <p class="modal-info" *ngIf="selectedAtelier?.date">
-          <i class="far fa-clock"></i>
-          {{ selectedAtelier?.date | date: 'dd/MM/yyyy' }}
-        </p>
-        <p class="modal-info" *ngIf="!selectedAtelier?.date">
-          <i class="fas fa-info-circle"></i>
-          Date non définie
-        </p>
-      </div>
+   
 
       <!-- Coach Section -->
       <div class="coach-section" *ngIf="selectedAtelier?.coach || selectedAtelier?.coachId">
@@ -282,20 +291,14 @@
           <i class="fas fa-user-tie"></i>
           <span>Coach de l'atelier</span>
         </div>
-        <div class="coach-info-card" *ngIf="selectedAtelier?.coach">
+        <div class="coach-info-card" *ngIf="selectedAtelier?.coach as coach">
           <div class="coach-avatar">
             <i class="fas fa-user"></i>
           </div>
           <div class="coach-details">
-            <h4 class="coach-name">{{ selectedAtelier?.coach?.prenom || '' }} {{ selectedAtelier?.coach?.nom || '' }}</h4>
-            <p class="coach-specialty" *ngIf="selectedAtelier?.coach?.specialite">
-              <i class="fas fa-star"></i>
-              Spécialité: {{ selectedAtelier?.coach?.specialite }}
-            </p>
-            <p class="coach-specialty" *ngIf="!selectedAtelier?.coach?.specialite">
-              <i class="fas fa-info-circle"></i>
-              Spécialité non définie
-            </p>
+            <h4 class="coach-name">{{ coach.fullName || (((coach.prenom || '') + ' ' + (coach.nom || ''))) }}</h4>
+            
+          
           </div>
         </div>
         <div class="coach-info-card" *ngIf="!selectedAtelier?.coach && selectedAtelier?.coachId">
@@ -331,6 +334,19 @@
 
     <!-- Footer -->
     <div class="reservation-modal-footer">
+      <div class="reservation-summary" *ngIf="selectedAtelier">
+        <span>
+          <i class="fas fa-user-tie"></i>
+          Coach:
+          <span *ngIf="selectedAtelier.coach as coach; else coachIdOnly">
+            {{ coach.fullName || (((coach.prenom || '') + ' ' + (coach.nom || ''))) }}
+          </span>
+          <ng-template #coachIdOnly>
+            <span *ngIf="selectedAtelier.coachId">#{{ selectedAtelier.coachId }}</span>
+            <span *ngIf="!selectedAtelier.coachId">Non assigné</span>
+          </ng-template>
+        </span>
+      </div>
       <button class="reservation-btn btn-secondary" (click)="closeReservationModal()">
         <i class="fas fa-times"></i>
         Fermer
@@ -339,8 +355,50 @@
         <i class="fas fa-check"></i>
         Confirmer
       </button>
+      <div *ngIf="duplicateWarning" class="duplicate-warning" style="color:#d9534f; font-size:0.9rem; margin-top:8px; width:100%">
+        {{ duplicateWarning }}
+      </div>
     </div>
 
+  </div>
+</div>
+
+<!-- Confirmation de réservation -->
+<div *ngIf="showReservationConfirmation" class="modal-backdrop reservation-modal-backdrop" (click)="closeReservationConfirmation()">
+  <div class="modal-content reservation-modal-content" (click)="$event.stopPropagation()">
+    <div class="reservation-modal-header">
+      <button type="button" class="reservation-close-btn" (click)="closeReservationConfirmation()">
+        <i class="fas fa-times"></i>
+      </button>
+      <div class="header-content">
+        <div class="header-text">
+          <h2 class="modal-title">Réservation confirmée</h2>
+          <p class="modal-subtitle">Votre réservation a été créée avec succès.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="reservation-modal-body">
+      <div class="description-section" *ngIf="reservationConfirmation as r">
+        <div class="section-header">
+          <i class="fas fa-receipt"></i>
+          <span>Détails de la réservation</span>
+        </div>
+        <p class="modal-info"><strong>ID:</strong> {{ r.id }}</p>
+        <p class="modal-info"><strong>Date:</strong> {{ r.dateReservation | date: 'dd/MM/yyyy' }}</p>
+        <p class="modal-info"><strong>Atelier:</strong> {{ r.atelierNom }}</p>
+        <p class="modal-info"><strong>Description:</strong> {{ r.atelierDescription }}</p>
+        <p class="modal-info" *ngIf="r.coachNom"><strong>Coach:</strong> {{ r.coachNom }}</p>
+        <p class="modal-info" *ngIf="r.coachSpecialite"><strong>Spécialité:</strong> {{ r.coachSpecialite }}</p>
+      </div>
+    </div>
+
+    <div class="reservation-modal-footer">
+      <button class="reservation-btn btn-primary confirm-btn" (click)="closeReservationConfirmation()">
+        <i class="fas fa-check"></i>
+        Fermer
+      </button>
+    </div>
   </div>
 </div>
 

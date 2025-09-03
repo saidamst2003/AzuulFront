@@ -4,6 +4,7 @@ import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angula
 import { Subscription } from 'rxjs';
 import { Atelier, Coach, CreateAtelierDTO } from '../../models/atelier.model';
 import { AtelierService } from '../../services/atelier.service';
+import { CoachService } from '../../services/coach.service';
 import { ReservationService } from '../../services/reservation.service';
 import { AuthService } from '../../services/auth';
 import { Router } from '@angular/router';
@@ -11,6 +12,7 @@ import { Footer } from "../../layout/footer/footer";
 import { Navbar } from "../../layout/navbar/navbar";
 import { FormsModule } from '@angular/forms';
 import { CreateReservationDTO } from '../../models/reservation.model';
+import { ReservationResponseDTO } from '../../models/reservation.model';
 
 interface Toast {
   id: number;
@@ -26,6 +28,7 @@ interface Toast {
   styleUrls: ['./atelier.css']
 })
 export class AteliersComponent implements OnInit, OnDestroy {
+  private readonly DEBUG = false;
   ateliers: Atelier[] = [];
   coaches: Coach[] = [];
   filteredCoaches: Coach[] = [];
@@ -50,15 +53,27 @@ export class AteliersComponent implements OnInit, OnDestroy {
   showReservationModal = false;
   selectedDate: string = '';
   selectedAtelier: Atelier | null = null;
+  reservationDate: string = '';
+
+  // Reservation confirmation modal state
+  showReservationConfirmation = false;
+  reservationConfirmation: ReservationResponseDTO | null = null;
+
+  // Local duplicate-reservation guard (per user+atelier)
+  private reservationKeys = new Set<string>();
+  duplicateWarning: string | null = null;
 
   private subscription = new Subscription();
+  
+  private isCreatingReservation = false;
 
   constructor(
     private atelierService: AtelierService,
     private reservationService: ReservationService,
     private authService: AuthService,
     public router: Router,
-    private fb: FormBuilder
+    private fb: FormBuilder,
+    private coachService: CoachService
   ) {
     this.atelierForm = this.createForm();
   }
@@ -71,6 +86,9 @@ export class AteliersComponent implements OnInit, OnDestroy {
     
     // Vérifier le token
     this.checkToken();
+
+    // Load local reservation keys (to warn user before duplicate)
+    this.loadLocalReservationKeys();
 
     // Filter coaches when category changes
     this.subscription.add(
@@ -118,13 +136,13 @@ export class AteliersComponent implements OnInit, OnDestroy {
   private checkAuthentication(): void {
     this.subscription.add(
       this.authService.isAuthenticated$.subscribe(authenticated => {
-        console.log('AtelierComponent: Authentication state changed:', authenticated);
+        if (this.DEBUG) console.log('AtelierComponent: Authentication state changed:', authenticated);
         this.isAuthenticated = authenticated;
         if (!authenticated) {
           this.showToast('warning', 'Veuillez vous connecter pour accéder aux fonctionnalités complètes');
           this.coaches = []; // Clear coaches when not authenticated
         } else {
-          console.log('AtelierComponent: User is authenticated, loading data...');
+          if (this.DEBUG) console.log('AtelierComponent: User is authenticated, loading data...');
           // Determine role flags
           const u = this.authService.getCurrentUser();
           this.isAdmin = u?.role === 'ADMIN';
@@ -138,7 +156,7 @@ export class AteliersComponent implements OnInit, OnDestroy {
 
     // Vérifier aussi l'état initial
     const initialAuthState = this.authService.isAuthenticated();
-    console.log('AtelierComponent: Initial authentication state:', initialAuthState);
+    if (this.DEBUG) console.log('AtelierComponent: Initial authentication state:', initialAuthState);
     this.isAuthenticated = initialAuthState;
     
     // If initially authenticated, load coaches immediately
@@ -179,17 +197,28 @@ export class AteliersComponent implements OnInit, OnDestroy {
     this.subscription.add(
       source$.subscribe({
         next: (ateliers) => {
+          // Filtrer: ne garder que les ateliers dont la date est aujourd'hui ou plus tard
+          const visibleAteliers = (ateliers || []).filter(a => this.isAtelierDateTodayOrFuture(a));
           // Enforce coach-specific view if user is a coach
           if (this.isCoach) {
             const currentUser = this.authService.getCurrentUser();
             const coachId = currentUser?.id;
-            const filtered = (ateliers || []).filter(a => a.coachId === coachId || a.coach?.id === coachId);
+            const filtered = visibleAteliers.filter(a => a.coachId === coachId || a.coach?.id === coachId);
             this.ateliers = filtered;
             if ((ateliers?.length || 0) > 0 && filtered.length === 0) {
               this.showToast('info', 'Aucun atelier assigné à votre compte.');
             }
           } else {
-            this.ateliers = ateliers;
+            this.ateliers = visibleAteliers;
+            
+            // Auto-fix ateliers without coaches if admin and coaches are available
+            if (this.isAdmin && this.coaches.length > 0) {
+              const ateliersWithoutCoaches = visibleAteliers.filter(a => !a.coach && !a.coachId);
+              if (ateliersWithoutCoaches.length > 0) {
+                console.log(`Found ${ateliersWithoutCoaches.length} ateliers without coaches, auto-assigning...`);
+                this.autoAssignCoachesToAteliers(ateliersWithoutCoaches);
+              }
+            }
           }
           this.error = null;
         },
@@ -206,10 +235,20 @@ export class AteliersComponent implements OnInit, OnDestroy {
     );
   }
 
+  // Ne garder que les ateliers à partir d'aujourd'hui (si date présente)
+  private isAtelierDateTodayOrFuture(atelier: Atelier): boolean {
+    if (!atelier?.date) return true; // si pas de date, on affiche
+    const d = new Date(atelier.date as any);
+    if (isNaN(d.getTime())) return true;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return d >= today;
+  }
+
   loadCoaches(): void {
-    console.log('AtelierComponent: Starting to load coaches...');
-    console.log('AtelierComponent: Is authenticated:', this.isAuthenticated);
-    console.log('AtelierComponent: User token:', this.authService.getToken() ? 'Present' : 'Missing');
+    if (this.DEBUG) console.log('AtelierComponent: Starting to load coaches...');
+    if (this.DEBUG) console.log('AtelierComponent: Is authenticated:', this.isAuthenticated);
+    if (this.DEBUG) console.log('AtelierComponent: User token:', this.authService.getToken() ? 'Present' : 'Missing');
     
     // Check if user is authenticated before loading coaches
     if (!this.isAuthenticated) {
@@ -220,7 +259,7 @@ export class AteliersComponent implements OnInit, OnDestroy {
 
     // Coaches do not need the global coaches list; skip to avoid 403
     if (this.isCoach) {
-      console.log('AtelierComponent: User is COACH, skipping global coaches load');
+      if (this.DEBUG) console.log('AtelierComponent: User is COACH, skipping global coaches load');
       this.coaches = [];
       return;
     }
@@ -228,29 +267,29 @@ export class AteliersComponent implements OnInit, OnDestroy {
     this.subscription.add(
       this.atelierService.getCoaches().subscribe({
         next: (coaches) => {
-          console.log('AtelierComponent: Coaches loaded successfully:', coaches);
+          if (this.DEBUG) console.log('AtelierComponent: Coaches loaded successfully:', coaches);
           this.coaches = coaches;
           // Initialize filtered list based on current category selection
           const currentCategory = this.atelierForm.get('categorie')!.value;
           this.filterCoachesByCategory(currentCategory);
           if (coaches.length === 0) {
-            console.log('AtelierComponent: No coaches available');
+            if (this.DEBUG) console.log('AtelierComponent: No coaches available');
             this.showToast('warning', 'Aucun coach disponible pour le moment');
           } else {
-            console.log('AtelierComponent: Loaded', coaches.length, 'coaches');
+            if (this.DEBUG) console.log('AtelierComponent: Loaded', coaches.length, 'coaches');
             this.showToast('success', `${coaches.length} coach(es) chargé(s) avec succès`);
           }
         },
         error: (error) => {
-          console.log('AtelierComponent: Error loading coaches:', error);
+          if (this.DEBUG) console.log('AtelierComponent: Error loading coaches:', error);
           this.coaches = []; // Initialiser avec un tableau vide
           
           // Provide more specific error messages based on status code
           if (error.status === 403) {
-            console.log('AtelierComponent: Access denied to coaches endpoint');
+            if (this.DEBUG) console.log('AtelierComponent: Access denied to coaches endpoint');
             this.showToast('warning', 'Vous n\'avez pas les permissions pour voir la liste des coaches');
           } else if (error.status === 401) {
-            console.log('AtelierComponent: Unauthorized - redirecting to login');
+            if (this.DEBUG) console.log('AtelierComponent: Unauthorized - redirecting to login');
             this.showToast('warning', 'Session expirée. Veuillez vous reconnecter.');
             this.navigateToLogin();
           } else {
@@ -270,28 +309,28 @@ export class AteliersComponent implements OnInit, OnDestroy {
   }
 
   checkAdminStatus(): void {
-    console.log('AtelierComponent: Checking admin status...');
+    if (this.DEBUG) console.log('AtelierComponent: Checking admin status...');
     this.subscription.add(
       this.authService.user$.subscribe(user => {
-        console.log('AtelierComponent: User data received:', user);
-        console.log('AtelierComponent: User role:', user?.role);
+        if (this.DEBUG) console.log('AtelierComponent: User data received:', user);
+        if (this.DEBUG) console.log('AtelierComponent: User role:', user?.role);
         // Seul ADMIN peut créer/modifier/supprimer des ateliers
         this.isAdmin = user?.role === 'ADMIN';
         this.isCoach = user?.role === 'COACH';
-        console.log('AtelierComponent: isAdmin set to:', this.isAdmin);
-        console.log('AtelierComponent: isCoach set to:', this.isCoach);
+        if (this.DEBUG) console.log('AtelierComponent: isAdmin set to:', this.isAdmin);
+        if (this.DEBUG) console.log('AtelierComponent: isCoach set to:', this.isCoach);
       })
     );
     
     // Vérifier aussi l'état initial
     const currentUser = this.authService.getCurrentUser();
-    console.log('AtelierComponent: Current user from auth service:', currentUser);
+    if (this.DEBUG) console.log('AtelierComponent: Current user from auth service:', currentUser);
     if (currentUser) {
       // Seul ADMIN peut créer/modifier/supprimer des ateliers
       this.isAdmin = currentUser.role === 'ADMIN';
       this.isCoach = currentUser.role === 'COACH';
-      console.log('AtelierComponent: isAdmin set from current user:', this.isAdmin);
-      console.log('AtelierComponent: isCoach set from current user:', this.isCoach);
+      if (this.DEBUG) console.log('AtelierComponent: isAdmin set from current user:', this.isAdmin);
+      if (this.DEBUG) console.log('AtelierComponent: isCoach set from current user:', this.isCoach);
     }
   }
 
@@ -299,6 +338,149 @@ export class AteliersComponent implements OnInit, OnDestroy {
   isClient(): boolean {
     // Seuls les clients peuvent réserver (ni admin, ni coach)
     return this.isAuthenticated && !this.isAdmin && !this.isCoach;
+  }
+
+  // Helper method to check if there are ateliers without coaches
+  hasAteliersWithoutCoaches(): boolean {
+    return this.ateliers.some(a => !a.coach && !a.coachId);
+  }
+
+  // Helper method for admin to assign coaches to ateliers without coaches
+  assignCoachToAtelier(atelier: Atelier, coachId: number): void {
+    if (!this.isAdmin) {
+      this.showToast('error', 'Seuls les administrateurs peuvent assigner des coaches');
+      return;
+    }
+
+    if (!coachId || coachId <= 0) {
+      this.showToast('error', 'ID de coach invalide');
+      return;
+    }
+
+    const coach = this.coaches.find(c => c.id === coachId);
+    if (!coach) {
+      this.showToast('error', 'Coach non trouvé');
+      return;
+    }
+
+    // Update the atelier locally first
+    atelier.coachId = coachId;
+    atelier.coach = coach;
+
+    // Then update via API
+    const updatedAtelier: Atelier = {
+      ...atelier,
+      coachId: coachId
+    };
+
+    this.subscription.add(
+      this.atelierService.update(atelier.id!, updatedAtelier).subscribe({
+        next: () => {
+          this.showToast('success', `Coach ${coach.prenom} ${coach.nom} assigné à l'atelier "${atelier.nom}"`);
+          this.loadAteliers(); // Reload to get updated data
+        },
+        error: (error) => {
+          this.showToast('error', error.userMessage || 'Erreur lors de l\'assignation du coach');
+          // Revert local changes on error
+          atelier.coachId = undefined;
+          atelier.coach = undefined;
+        }
+      })
+    );
+  }
+
+  // Helper method to assign the first available coach to an atelier
+  assignFirstAvailableCoach(atelier: Atelier): void {
+    if (!this.isAdmin) {
+      this.showToast('error', 'Seuls les administrateurs peuvent assigner des coaches');
+      return;
+    }
+
+    if (this.coaches.length === 0) {
+      this.showToast('error', 'Aucun coach disponible');
+      return;
+    }
+
+    const firstCoach = this.coaches[0];
+    this.assignCoachToAtelier(atelier, firstCoach.id);
+  }
+
+  // Auto-assign coaches to ateliers without them (silent, for admin use)
+  private autoAssignCoachesToAteliers(ateliersWithoutCoaches: Atelier[]): void {
+    if (this.coaches.length === 0) return;
+    
+    const firstCoach = this.coaches[0];
+    ateliersWithoutCoaches.forEach(atelier => {
+      // Update locally first
+      atelier.coach = firstCoach;
+      atelier.coachId = firstCoach.id;
+      
+      // Update via API (silently)
+      const updatedAtelier: Atelier = {
+        ...atelier,
+        coachId: firstCoach.id
+      };
+      
+      this.subscription.add(
+        this.atelierService.update(atelier.id!, updatedAtelier).subscribe({
+          next: () => {
+            console.log(`Auto-assigned coach ${firstCoach.prenom} ${firstCoach.nom} to atelier ${atelier.id}`);
+          },
+          error: (err) => {
+            console.log(`Failed to auto-assign coach to atelier ${atelier.id}:`, err);
+            // Revert local changes on error
+            atelier.coach = undefined;
+            atelier.coachId = undefined;
+          }
+        })
+      );
+    });
+  }
+
+  // Bulk fix method to assign coaches to all ateliers without them
+  fixAllAteliersWithoutCoaches(): void {
+    if (!this.isAdmin) {
+      this.showToast('error', 'Seuls les administrateurs peuvent effectuer cette action');
+      return;
+    }
+
+    if (this.coaches.length === 0) {
+      this.showToast('error', 'Aucun coach disponible');
+      return;
+    }
+
+    const ateliersWithoutCoaches = this.ateliers.filter(a => !a.coach && !a.coachId);
+    
+    if (ateliersWithoutCoaches.length === 0) {
+      this.showToast('info', 'Tous les ateliers ont déjà des coaches assignés');
+      return;
+    }
+
+    const firstCoach = this.coaches[0];
+    let successCount = 0;
+    let errorCount = 0;
+
+    this.showToast('info', `Début de l'assignation de coaches à ${ateliersWithoutCoaches.length} atelier(s)...`);
+
+    ateliersWithoutCoaches.forEach((atelier, index) => {
+      setTimeout(() => {
+        this.assignCoachToAtelier(atelier, firstCoach.id);
+        
+        // Track success/error for final report
+        if (atelier.coach) {
+          successCount++;
+        } else {
+          errorCount++;
+        }
+
+        // Show final report when all are processed
+        if (index === ateliersWithoutCoaches.length - 1) {
+          setTimeout(() => {
+            this.showToast('success', `Assignation terminée: ${successCount} succès, ${errorCount} échecs`);
+          }, 1000);
+        }
+      }, index * 500); // Stagger the requests to avoid overwhelming the API
+    });
   }
 
   openCreateForm(): void {
@@ -562,6 +744,8 @@ export class AteliersComponent implements OnInit, OnDestroy {
       .toUpperCase();
   }
 
+  // (Removed legacy local reservation helpers)
+
   onImageError(event: any, atelier: Atelier): void {
     const fallbackSvg = 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="600" height="400"><rect fill="#f5f5f5" width="600" height="400"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="24" fill="#999">Atelier</text></svg>');
     event.target.src = this.getImageUrlByCategorie(atelier.categorie) || fallbackSvg;
@@ -705,17 +889,30 @@ export class AteliersComponent implements OnInit, OnDestroy {
 
   private loadCoachDetailsFromService(coachId: number): void {
     console.log('Loading coach details from service for ID:', coachId);
-    
-    // Import CoachService if not already imported
-    // You might need to inject CoachService in the constructor
-    // For now, we'll use the existing coaches list
-    if (this.coaches.length > 0) {
-      const coach = this.coaches.find(c => c.id === coachId);
-      if (coach && this.selectedAtelier) {
-        this.selectedAtelier.coach = coach;
-        console.log('Coach details loaded from service:', coach);
-      }
+    if (!coachId) return;
+
+    // If already loaded in list, use it immediately
+    const inMemoryCoach = this.coaches.find(c => c.id === coachId);
+    if (inMemoryCoach && this.selectedAtelier) {
+      this.selectedAtelier.coach = inMemoryCoach;
+      console.log('Coach details found in memory:', inMemoryCoach);
+      return;
     }
+
+    // Fetch from backend to ensure we have the full name
+    this.subscription.add(
+      this.coachService.getById(coachId).subscribe({
+        next: coach => {
+          if (this.selectedAtelier) {
+            this.selectedAtelier.coach = coach;
+            console.log('Coach details loaded from backend:', coach);
+          }
+        },
+        error: err => {
+          console.log('Failed to load coach from backend:', err);
+        }
+      })
+    );
   }
 
   openReservationModal(atelier: Atelier): void {
@@ -731,6 +928,7 @@ export class AteliersComponent implements OnInit, OnDestroy {
     }
     
     this.selectedAtelier = atelier;
+    this.duplicateWarning = null;
     // Prefill date with atelier date if available
     this.selectedDate = (atelier.date && typeof atelier.date === 'string') ? atelier.date : '';
     this.showReservationModal = true;
@@ -799,6 +997,12 @@ export class AteliersComponent implements OnInit, OnDestroy {
     this.showReservationModal = false;
     this.selectedAtelier = null;
     this.selectedDate = '';
+    this.reservationDate = '';
+    this.duplicateWarning = null;
+  }
+
+  onDateChange(): void {
+    console.log('Date sélectionnée:', this.reservationDate);
   }
 
   closeReservationModalOnBackdrop(event: MouseEvent): void {
@@ -808,9 +1012,34 @@ export class AteliersComponent implements OnInit, OnDestroy {
   }
 createReservation(): void {
   if (!this.selectedAtelier) return;
+  // Empêcher les double-clics
+  if (this.isCreatingReservation) return;
+    // Vérifier en local si déjà réservé par cet utilisateur
+    const userForCheck = this.authService.getCurrentUser();
+    if (userForCheck?.id && this.selectedAtelier.id && this.isAtelierAlreadyReservedByClient(this.selectedAtelier.id, userForCheck.id)) {
+      this.duplicateWarning = 'Vous avez déjà réservé cet atelier.';
+      this.showToast('warning', 'Vous avez déjà réservé cet atelier.');
+      return;
+    }
 
-  // Check if atelier has a date, if not, use current date as fallback
-  const reservationDate = this.selectedAtelier.date || new Date().toISOString().split('T')[0];
+      // Check if a coach is assigned
+    if (!this.selectedAtelier.coach && !this.selectedAtelier.coachId) {
+      this.showToast('error', 'Cet atelier n\'a pas de coach assigné');
+      return;
+    }
+
+  // Use the selected reservation date, or fallback to atelier date or current date
+  const reservationDate = this.reservationDate || this.selectedAtelier.date || new Date().toISOString().split('T')[0];
+  // Valider que la date n'est pas passée
+  try {
+    const selected = new Date(reservationDate);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (selected < today) {
+      this.showToast('error', 'La date de réservation doit être aujourd\'hui ou plus tard.');
+      return;
+    }
+  } catch {}
 
   if (this.isAdmin || this.isCoach) {
     this.showToast('error', 'Les admins et coaches ne peuvent pas réserver d\'ateliers');
@@ -830,43 +1059,80 @@ createReservation(): void {
     dateReservation: reservationDate
   };
 
+  this.isCreatingReservation = true;
   this.reservationService.create(dto).subscribe({
-    next: () => {
-      let successMessage = 'Réservation réussie !';
+    next: (response) => {
+      console.log('Réservation créée avec succès:', response);
       
-      if (this.selectedAtelier) {
-        // Récupérer le nom du coach avec gestion des cas où il n'existe pas
-        const coach = this.selectedAtelier.coach;
-        let coachName = 'Non assigné';
-        
-        if (coach) {
-          const prenom = coach.prenom || '';
-          const nom = coach.nom || '';
-          coachName = `${prenom} ${nom}`.trim();
-          
-          // Si après trim il n'y a rien, utiliser "Non assigné"
-          if (!coachName) {
-            coachName = 'Non assigné';
-          }
-        }
-        
-        // Message personnalisé avec le nom de l'atelier et du coach
-        successMessage = `Réservation réussie pour l'atelier "${this.selectedAtelier.nom}" avec le coach ${coachName}`;
-        
-        // Optionnel: ajouter la date si elle existe
-        if (this.selectedAtelier.date) {
-          const dateFormatted = new Date(this.selectedAtelier.date).toLocaleDateString('fr-FR');
-          successMessage += ` pour le ${dateFormatted}`;
-        }
-      }
+      // Show confirmation modal with details if available
+      if (response) {
+        this.reservationConfirmation = response;
+        this.showReservationConfirmation = true;
 
-      this.showToast('success', successMessage);
+        // Record locally to prevent duplicate reservations prompt next time
+        try {
+          this.recordLocalReservation(response.atelierId, response.clientId);
+        } catch {}
+      } else {
+        // Fallback toast if no detailed response
+        this.showToast('success', 'Réservation créée avec succès');
+      }
       this.closeReservationModal();
+
+      // Marquer en local comme déjà réservé pour éviter les doublons
+      if (this.selectedAtelier && user?.id) {
+        try {
+          this.recordLocalReservation(this.selectedAtelier.id!, user.id);
+        } catch {}
+      }
     },
     error: (err) => {
       const msg = err?.userMessage || err?.error?.message || 'Erreur lors de la réservation';
+      if (err?.status === 409 || /deja|déja|déjà|already/i.test(String(err?.error?.message || ''))) {
+        this.duplicateWarning = 'Vous avez déjà réservé cet atelier.';
+      }
       this.showToast('error', msg);
+    },
+    complete: () => {
+      this.isCreatingReservation = false;
     }
   });
 }
+
+  // Confirmation modal controls
+  closeReservationConfirmation(): void {
+    this.showReservationConfirmation = false;
+    this.reservationConfirmation = null;
+  }
+
+  // --- Duplicate reservation helpers ---
+  private makeKey(atelierId: number, clientId: number): string {
+    return `${clientId}::${atelierId}`;
+  }
+
+  private loadLocalReservationKeys(): void {
+    try {
+      const raw = localStorage.getItem('reservationKeys');
+      if (raw) {
+        const arr: string[] = JSON.parse(raw);
+        if (Array.isArray(arr)) arr.forEach(k => this.reservationKeys.add(k));
+      }
+    } catch {}
+  }
+
+  private persistLocalReservationKeys(): void {
+    try {
+      localStorage.setItem('reservationKeys', JSON.stringify(Array.from(this.reservationKeys)));
+    } catch {}
+  }
+
+  private recordLocalReservation(atelierId: number, clientId: number): void {
+    const key = this.makeKey(atelierId, clientId);
+    this.reservationKeys.add(key);
+    this.persistLocalReservationKeys();
+  }
+
+  isAtelierAlreadyReservedByClient(atelierId: number, clientId: number): boolean {
+    return this.reservationKeys.has(this.makeKey(atelierId, clientId));
+  }
 }
