@@ -3,10 +3,10 @@ import { Navbar } from '../../layout/navbar/navbar';
 import { Footer } from '../../layout/footer/footer';
 
 @Component({
-  selector: 'app-pause-cafee',
+  selector: 'app-mes-coach',
   standalone: true,
   imports: [Navbar, Footer],
-  templateUrl: './pause-cafee.html',
-  styleUrl: './pause-cafee.css'
+  templateUrl: './mes-coach.html',
+  styleUrl: './mes-coach.css'
 })
 export class PauseCafe {}

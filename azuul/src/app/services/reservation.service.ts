@@ -29,7 +29,17 @@ export class ReservationService {
 
   private handleError(error: any) {
     let errorMessage = 'Une erreur est survenue lors de la réservation';
-    if (error?.error?.message) errorMessage = error.error.message;
+
+    // Spécifique: réservation en double
+    if (error?.status === 409) {
+      errorMessage = 'Vous avez déjà réservé cet atelier.';
+    } else if (error?.status === 400 && typeof error?.error?.message === 'string' &&
+               /deja|déja|déjà|already/i.test(error.error.message)) {
+      errorMessage = 'Vous avez déjà réservé cet atelier.';
+    } else if (typeof error?.error?.message === 'string') {
+      errorMessage = error.error.message;
+    }
+
     return throwError(() => ({ ...error, userMessage: errorMessage }));
   }
 }
