@@ -1,101 +1,133 @@
-<div class="register-container">
-  <div class="register-card">
-    <div class="register-header">
-      <div class="logo">
-        <i class="fas fa-paint-brush"></i>
-        <h1>AZUL</h1>
+<div class="min-h-screen bg-gray-100 py-6 flex flex-col justify-center sm:py-12">
+  <div class="relative py-3 sm:max-w-xl sm:mx-auto">
+    <!-- Forme géométrique de fond -->
+    <div class="absolute inset-0 bg-gradient-to-r from-black to-gray-800 shadow-2xl transform -skew-y-6 sm:skew-y-0 sm:-rotate-6 sm:rounded-3xl"></div>
+    
+    <!-- Carte principale -->
+    <div class="relative px-4 py-10 bg-white shadow-2xl sm:rounded-3xl sm:p-20">
+      <div class="max-w-md mx-auto">
+        <!-- Header avec logo -->
+        <div class="text-center mb-8">
+          <div class="logo mb-4">
+            <i class="fas fa-paint-brush text-3xl text-black"></i>
+            <h1 class="text-3xl font-bold text-black ml-2">AZUL</h1>
+          </div>
+          <h2 class="text-2xl font-semibold text-gray-800">Inscription</h2>
+          <p class="text-gray-600 mt-2">Créez votre compte AZUL</p>
+        </div>
+
+        <!-- Formulaire -->
+        <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="divide-y divide-gray-200">
+          <div class="py-8 text-base leading-6 space-y-6 text-gray-700 sm:text-lg sm:leading-7">
+            
+            <!-- Champ Nom complet -->
+            <div class="relative">
+              <input 
+                autocomplete="off" 
+                id="fullName" 
+                formControlName="fullName" 
+                type="text" 
+                class="peer placeholder-transparent h-12 w-full border-b-2 border-gray-300 text-gray-900 focus:outline-none focus:border-black transition-colors duration-200" 
+                placeholder="Full name"
+                [class.error]="registerForm.get('fullName')?.invalid && registerForm.get('fullName')?.touched"
+              />
+              <label for="fullName" class="absolute left-0 -top-3.5 text-gray-600 text-sm peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 peer-placeholder-shown:top-3 transition-all peer-focus:-top-3.5 peer-focus:text-black peer-focus:text-sm font-medium">
+                Nom complet
+              </label>
+              <div class="error-message" *ngIf="registerForm.get('fullName')?.invalid && registerForm.get('fullName')?.touched">
+                <span *ngIf="registerForm.get('fullName')?.errors?.['required']">Le nom complet est requis</span>
+              </div>
+            </div>
+
+            <!-- Champ Email -->
+            <div class="relative">
+              <input 
+                autocomplete="off" 
+                id="email" 
+                formControlName="email" 
+                type="email" 
+                class="peer placeholder-transparent h-12 w-full border-b-2 border-gray-300 text-gray-900 focus:outline-none focus:border-black transition-colors duration-200" 
+                placeholder="Email address"
+                [class.error]="registerForm.get('email')?.invalid && registerForm.get('email')?.touched"
+              />
+              <label for="email" class="absolute left-0 -top-3.5 text-gray-600 text-sm peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 peer-placeholder-shown:top-3 transition-all peer-focus:-top-3.5 peer-focus:text-black peer-focus:text-sm font-medium">
+                Adresse Email
+              </label>
+              <div class="error-message" *ngIf="registerForm.get('email')?.invalid && registerForm.get('email')?.touched">
+                <span *ngIf="registerForm.get('email')?.errors?.['required']">L'email est requis</span>
+                <span *ngIf="registerForm.get('email')?.errors?.['email']">Format d'email invalide</span>
+              </div>
+            </div>
+
+            <!-- Champ Mot de passe -->
+            <div class="relative">
+              <input 
+                autocomplete="off" 
+                id="password" 
+                formControlName="password" 
+                type="password" 
+                class="peer placeholder-transparent h-12 w-full border-b-2 border-gray-300 text-gray-900 focus:outline-none focus:border-black transition-colors duration-200" 
+                placeholder="Password"
+                [class.error]="registerForm.get('password')?.invalid && registerForm.get('password')?.touched"
+              />
+              <label for="password" class="absolute left-0 -top-3.5 text-gray-600 text-sm peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 peer-placeholder-shown:top-3 transition-all peer-focus:-top-3.5 peer-focus:text-black peer-focus:text-sm font-medium">
+                Mot de passe
+              </label>
+              <div class="error-message" *ngIf="registerForm.get('password')?.invalid && registerForm.get('password')?.touched">
+                <span *ngIf="registerForm.get('password')?.errors?.['required']">Le mot de passe est requis</span>
+                <span *ngIf="registerForm.get('password')?.errors?.['minlength']">Le mot de passe doit contenir au moins 6 caractères</span>
+              </div>
+            </div>
+
+            <!-- Champ Rôle -->
+            <div class="relative">
+              <select 
+                id="role" 
+                formControlName="role" 
+                class="peer h-12 w-full border-b-2 border-gray-300 text-gray-900 focus:outline-none focus:border-black transition-colors duration-200 bg-transparent"
+                [class.error]="registerForm.get('role')?.invalid && registerForm.get('role')?.touched"
+              >
+                <option value="" disabled selected>Choisir un rôle</option>
+                <option value="CLIENT">Client</option>
+                <option value="ADMIN">Administrateur</option>
+              </select>
+              <label for="role" class="absolute left-0 -top-3.5 text-gray-600 text-sm font-medium transition-all peer-focus:-top-3.5 peer-focus:text-black peer-focus:text-sm">
+                Rôle
+              </label>
+              <div class="error-message" *ngIf="registerForm.get('role')?.invalid && registerForm.get('role')?.touched">
+                <span *ngIf="registerForm.get('role')?.errors?.['required']">Le rôle est requis</span>
+              </div>
+            </div>
+
+            <!-- Messages de succès et d'erreur -->
+            <div class="success-message" *ngIf="successMessage">
+              {{ successMessage }}
+            </div>
+
+            <div class="error-message" *ngIf="errorMessage">
+              {{ errorMessage }}
+            </div>
+
+            <!-- Bouton d'inscription -->
+            <div class="relative">
+              <button 
+                type="submit" 
+                class="w-full bg-black text-white rounded-lg px-4 py-3 font-semibold hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2 transition-all duration-200 transform hover:scale-105" 
+              >
+                S'inscrire
+              </button>
+            </div>
+          </div>
+        </form>
+
+        <!-- Footer -->
+        <div class="text-center mt-6">
+          <p class="text-gray-600 text-sm">
+            Déjà un compte ? 
+            <a routerLink="/login" class="text-black font-semibold hover:underline cursor-pointer">Se connecter</a>
+          </p>
+        </div>
       </div>
-      <h2>Inscription</h2>
-      <p>Créez votre compte AZUL</p>
-    </div>
-
-    <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="register-form">
-      <div class="form-group">
-        <label for="fullName">Nom complet</label>
-        <div class="input-wrapper">
-          <i class="fas fa-user"></i>
-          <input
-            type="text"
-            id="fullName"
-            formControlName="fullName"
-            placeholder="Entrez votre nom complet"
-            [class.error]="registerForm.get('fullName')?.invalid && registerForm.get('fullName')?.touched"
-          />
-        </div>
-        <div class="error-message" *ngIf="registerForm.get('fullName')?.invalid && registerForm.get('fullName')?.touched">
-          <span *ngIf="registerForm.get('fullName')?.errors?.['required']">Le nom complet est requis</span>
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label for="email">Email</label>
-        <div class="input-wrapper">
-          <i class="fas fa-envelope"></i>
-          <input
-            type="email"
-            id="email"
-            formControlName="email"
-            placeholder="Entrez votre email"
-            [class.error]="registerForm.get('email')?.invalid && registerForm.get('email')?.touched"
-          />
-        </div>
-        <div class="error-message" *ngIf="registerForm.get('email')?.invalid && registerForm.get('email')?.touched">
-          <span *ngIf="registerForm.get('email')?.errors?.['required']">L'email est requis</span>
-          <span *ngIf="registerForm.get('email')?.errors?.['email']">Format d'email invalide</span>
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label for="password">Mot de passe</label>
-        <div class="input-wrapper">
-          <i class="fas fa-lock"></i>
-          <input
-            type="password"
-            id="password"
-            formControlName="password"
-            placeholder="Entrez votre mot de passe"
-            [class.error]="registerForm.get('password')?.invalid && registerForm.get('password')?.touched"
-          />
-        </div>
-        <div class="error-message" *ngIf="registerForm.get('password')?.invalid && registerForm.get('password')?.touched">
-          <span *ngIf="registerForm.get('password')?.errors?.['required']">Le mot de passe est requis</span>
-          <span *ngIf="registerForm.get('password')?.errors?.['minlength']">Le mot de passe doit contenir au moins 6 caractères</span>
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label for="role">Rôle</label>
-        <div class="input-wrapper">
-          <i class="fas fa-user-tag"></i>
-          <select
-            id="role"
-            formControlName="role"
-            [class.error]="registerForm.get('role')?.invalid && registerForm.get('role')?.touched"
-          >
-            <option value="CLIENT">Client</option>
-            <option value="ADMIN">Administrateur</option>
-          </select>
-        </div>
-        <div class="error-message" *ngIf="registerForm.get('role')?.invalid && registerForm.get('role')?.touched">
-          <span *ngIf="registerForm.get('role')?.errors?.['required']">Le rôle est requis</span>
-        </div>
-      </div>
-
-      <div class="success-message" *ngIf="successMessage">
-        {{ successMessage }}
-      </div>
-
-      <div class="error-message" *ngIf="errorMessage">
-        {{ errorMessage }}
-      </div>
-
-      <button type="submit" class="register-btn">
-        S'inscrire
-      </button>
-    </form>
-
-    <div class="register-footer">
-      <p>Déjà un compte ? <a routerLink="/login" class="link">Se connecter</a></p>
     </div>
   </div>
 </div>

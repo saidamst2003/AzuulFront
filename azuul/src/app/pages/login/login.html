@@ -1,66 +1,108 @@
-<div class="login-container">
-  <div class="login-card">
-    <div class="login-header">
-      <div class="logo">
-        <i class="fas fa-paint-brush"></i>
-        <h1>AZUL</h1>
-      </div>
-      <h2>Connexion</h2>
-      <p>Connectez-vous à votre compte AZUL</p>
-    </div>
-
-    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="login-form">
-      <div class="form-group">
-        <label for="email">Email</label>
-        <div class="input-wrapper">
-          <i class="fas fa-envelope"></i>
-          <input
-            type="email"
-            id="email"
-            formControlName="email"
-            placeholder="Entrez votre email"
-            [class.error]="loginForm.get('email')?.invalid && loginForm.get('email')?.touched"
-          />
+<div class="min-h-screen bg-gray-100 py-6 flex flex-col justify-center sm:py-12">
+  <div class="relative py-3 sm:max-w-xl sm:mx-auto">
+    <!-- Forme géométrique de fond -->
+    <div class="absolute inset-0 bg-gradient-to-r from-black to-gray-800 shadow-2xl transform -skew-y-6 sm:skew-y-0 sm:-rotate-6 sm:rounded-3xl"></div>
+    
+    <!-- Carte principale -->
+    <div class="relative px-4 py-10 bg-white shadow-2xl sm:rounded-3xl sm:p-20">
+      <div class="max-w-md mx-auto">
+        <!-- Header avec logo -->
+        <div class="text-center mb-8">
+          <div class="logo mb-4">
+            <i class="fas fa-paint-brush text-3xl text-black"></i>
+            <h1 class="text-3xl font-bold text-black ml-2">AZUL</h1>
+          </div>
+          <h2 class="text-2xl font-semibold text-gray-800">Connexion</h2>
+          <p class="text-gray-600 mt-2">Connectez-vous à votre compte AZUL</p>
         </div>
-        <div class="error-message" *ngIf="loginForm.get('email')?.invalid && loginForm.get('email')?.touched">
-          <span *ngIf="loginForm.get('email')?.errors?.['required']">L'email est requis</span>
-          <span *ngIf="loginForm.get('email')?.errors?.['email']">Format d'email invalide</span>
+
+        <!-- Formulaire -->
+        <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="divide-y divide-gray-200">
+          <div class="py-8 text-base leading-6 space-y-6 text-gray-700 sm:text-lg sm:leading-7">
+            
+            <!-- Champ Email -->
+            <div class="relative">
+              <input 
+                autocomplete="off" 
+                id="email" 
+                formControlName="email" 
+                type="email" 
+                class="peer placeholder-transparent h-12 w-full border-b-2 border-gray-300 text-gray-900 focus:outline-none focus:border-black transition-colors duration-200" 
+                placeholder="Email address"
+                [class.error]="loginForm.get('email')?.invalid && loginForm.get('email')?.touched"
+              />
+              <label for="email" class="absolute left-0 -top-3.5 text-gray-600 text-sm peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 peer-placeholder-shown:top-3 transition-all peer-focus:-top-3.5 peer-focus:text-black peer-focus:text-sm font-medium">
+                Adresse Email
+              </label>
+              <div class="error-message" *ngIf="loginForm.get('email')?.invalid && loginForm.get('email')?.touched">
+                <span *ngIf="loginForm.get('email')?.errors?.['required']">L'email est requis</span>
+                <span *ngIf="loginForm.get('email')?.errors?.['email']">Format d'email invalide</span>
+              </div>
+            </div>
+
+            <!-- Champ Mot de passe -->
+            <div class="relative">
+              <input 
+                autocomplete="off" 
+                id="password" 
+                formControlName="password" 
+                type="password" 
+                class="peer placeholder-transparent h-12 w-full border-b-2 border-gray-300 text-gray-900 focus:outline-none focus:border-black transition-colors duration-200" 
+                placeholder="Password"
+                [class.error]="loginForm.get('password')?.invalid && loginForm.get('password')?.touched"
+              />
+              <label for="password" class="absolute left-0 -top-3.5 text-gray-600 text-sm peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 peer-placeholder-shown:top-3 transition-all peer-focus:-top-3.5 peer-focus:text-black peer-focus:text-sm font-medium">
+                Mot de passe
+              </label>
+              <div class="error-message" *ngIf="loginForm.get('password')?.invalid && loginForm.get('password')?.touched">
+                <span *ngIf="loginForm.get('password')?.errors?.['required']">Le mot de passe est requis</span>
+                <span *ngIf="loginForm.get('password')?.errors?.['minlength']">Le mot de passe doit contenir au moins 6 caractères</span>
+              </div>
+            </div>
+
+            <!-- Message d'erreur général -->
+            <div class="error-message" *ngIf="errorMessage">
+              {{ errorMessage }}
+            </div>
+
+            <!-- Bouton de connexion -->
+            <div class="relative">
+              <button 
+                type="submit" 
+                class="w-full bg-black text-white rounded-lg px-4 py-3 font-semibold hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2 transition-all duration-200 transform hover:scale-105" 
+                [disabled]="isLoading"
+              >
+                <span *ngIf="!isLoading">Se connecter</span>
+                <span *ngIf="isLoading" class="flex items-center justify-center">
+                  <i class="fas fa-spinner fa-spin mr-2"></i>
+                  Connexion...
+                </span>
+              </button>
+            </div>
+          </div>
+        </form>
+
+        <!-- Bouton Google -->
+        <div class="w-full flex justify-center mt-6">
+          <button class="flex items-center bg-white border border-gray-300 rounded-lg shadow-md px-6 py-3 text-sm font-medium text-gray-800 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-all duration-200">
+            <svg class="h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+            </svg>
+            <span>Continuer avec Google</span>
+          </button>
+        </div>
+
+        <!-- Footer -->
+        <div class="text-center mt-6">
+          <p class="text-gray-600 text-sm">
+            Pas encore de compte ? 
+            <a (click)="navigateToRegister()" class="text-black font-semibold hover:underline cursor-pointer">S'inscrire</a>
+          </p>
         </div>
       </div>
-
-      <div class="form-group">
-        <label for="password">Mot de passe</label>
-        <div class="input-wrapper">
-          <i class="fas fa-lock"></i>
-          <input
-            type="password"
-            id="password"
-            formControlName="password"
-            placeholder="Entrez votre mot de passe"
-            [class.error]="loginForm.get('password')?.invalid && loginForm.get('password')?.touched"
-          />
-        </div>
-        <div class="error-message" *ngIf="loginForm.get('password')?.invalid && loginForm.get('password')?.touched">
-          <span *ngIf="loginForm.get('password')?.errors?.['required']">Le mot de passe est requis</span>
-          <span *ngIf="loginForm.get('password')?.errors?.['minlength']">Le mot de passe doit contenir au moins 6 caractères</span>
-        </div>
-      </div>
-
-      <div class="error-message" *ngIf="errorMessage">
-        {{ errorMessage }}
-      </div>
-
-      <button type="submit" class="login-btn" [disabled]="isLoading">
-        <span *ngIf="!isLoading">Se connecter</span>
-        <span *ngIf="isLoading" class="loading">
-          <i class="fas fa-spinner fa-spin"></i>
-          Connexion...
-        </span>
-      </button>
-    </form>
-
-    <div class="login-footer">
-      <p>Pas encore de compte ? <a (click)="navigateToRegister()" class="link">S'inscrire</a></p>
     </div>
   </div>
 </div> 

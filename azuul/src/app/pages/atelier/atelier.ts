@@ -79,6 +79,8 @@ export class AteliersComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    // Initialize authentication state, load data (ateliers, coaches),
+    // check roles (admin/coach), and wire form reactions
     this.checkAuthentication();
     this.loadAteliers();
     this.loadCoaches();
@@ -102,6 +104,7 @@ export class AteliersComponent implements OnInit, OnDestroy {
 
   // Méthode pour vérifier le token
   checkToken(): void {
+    // Ensures a valid token is available/used by underlying services
     this.atelierService.checkAndUseToken();
   }
 
@@ -130,6 +133,7 @@ export class AteliersComponent implements OnInit, OnDestroy {
 
   // Public method for navigation
   navigateToLogin(): void {
+    // Redirect user to login route
     this.router.navigate(['/login']);
   }
 
@@ -169,6 +173,7 @@ export class AteliersComponent implements OnInit, OnDestroy {
   }
 
   private createForm(): FormGroup {
+    // Create the reactive form used for admin create/edit atelier modal
     return this.fb.group({
       nom: ['', [Validators.required, Validators.minLength(3)]],
       description: ['', [Validators.required, Validators.minLength(10)]],
@@ -180,6 +185,7 @@ export class AteliersComponent implements OnInit, OnDestroy {
   }
 
   private futureDateValidator(control: any) {
+    // Custom validator: enforce selected date to be strictly in the future
     if (!control.value) return null;
     const selectedDate = new Date(control.value);
     const tomorrow = new Date();
@@ -188,7 +194,10 @@ export class AteliersComponent implements OnInit, OnDestroy {
     return selectedDate < tomorrow ? { futureDate: true } : null;
   }
 
+  // Data
   loadAteliers(): void {
+    // Fetch ateliers list based on role (coach sees own),
+    // hide past-dated items, optionally auto-assign missing coaches for admins
     const currentUser = this.authService.getCurrentUser();
     const source$ = (this.isCoach && currentUser?.id)
       ? this.atelierService.getByCoachId(currentUser.id)
@@ -237,6 +246,7 @@ export class AteliersComponent implements OnInit, OnDestroy {
 
   // Ne garder que les ateliers à partir d'aujourd'hui (si date présente)
   private isAtelierDateTodayOrFuture(atelier: Atelier): boolean {
+    // Returns true if atelier has no date or its date is today or later
     if (!atelier?.date) return true; // si pas de date, on affiche
     const d = new Date(atelier.date as any);
     if (isNaN(d.getTime())) return true;
@@ -246,6 +256,7 @@ export class AteliersComponent implements OnInit, OnDestroy {
   }
 
   loadCoaches(): void {
+    // Load coaches if authenticated and not a coach; update filtered list
     if (this.DEBUG) console.log('AtelierComponent: Starting to load coaches...');
     if (this.DEBUG) console.log('AtelierComponent: Is authenticated:', this.isAuthenticated);
     if (this.DEBUG) console.log('AtelierComponent: User token:', this.authService.getToken() ? 'Present' : 'Missing');
@@ -309,6 +320,7 @@ export class AteliersComponent implements OnInit, OnDestroy {
   }
 
   checkAdminStatus(): void {
+    // Subscribe to user info and update admin/coach flags accordingly
     if (this.DEBUG) console.log('AtelierComponent: Checking admin status...');
     this.subscription.add(
       this.authService.user$.subscribe(user => {
@@ -336,6 +348,7 @@ export class AteliersComponent implements OnInit, OnDestroy {
 
   // Helper method to check if user is a client (can make reservations)
   isClient(): boolean {
+    // Clients are authenticated users who are neither admin nor coach
     // Seuls les clients peuvent réserver (ni admin, ni coach)
     return this.isAuthenticated && !this.isAdmin && !this.isCoach;
   }
@@ -345,8 +358,10 @@ export class AteliersComponent implements OnInit, OnDestroy {
     return this.ateliers.some(a => !a.coach && !a.coachId);
   }
 
+  // Admin
   // Helper method for admin to assign coaches to ateliers without coaches
   assignCoachToAtelier(atelier: Atelier, coachId: number): void {
+    // Admin helper: assign a coach to an atelier and persist via API
     if (!this.isAdmin) {
       this.showToast('error', 'Seuls les administrateurs peuvent assigner des coaches');
       return;
@@ -391,6 +406,7 @@ export class AteliersComponent implements OnInit, OnDestroy {
 
   // Helper method to assign the first available coach to an atelier
   assignFirstAvailableCoach(atelier: Atelier): void {
+    // Admin helper: quickly assign the first available coach to an atelier
     if (!this.isAdmin) {
       this.showToast('error', 'Seuls les administrateurs peuvent assigner des coaches');
       return;
@@ -407,6 +423,7 @@ export class AteliersComponent implements OnInit, OnDestroy {
 
   // Auto-assign coaches to ateliers without them (silent, for admin use)
   private autoAssignCoachesToAteliers(ateliersWithoutCoaches: Atelier[]): void {
+    // Admin-only: silently assign the first coach to any atelier missing one
     if (this.coaches.length === 0) return;
     
     const firstCoach = this.coaches[0];
@@ -439,6 +456,7 @@ export class AteliersComponent implements OnInit, OnDestroy {
 
   // Bulk fix method to assign coaches to all ateliers without them
   fixAllAteliersWithoutCoaches(): void {
+    // Admin action: batch-assign coaches to all ateliers without a coach
     if (!this.isAdmin) {
       this.showToast('error', 'Seuls les administrateurs peuvent effectuer cette action');
       return;
@@ -484,6 +502,7 @@ export class AteliersComponent implements OnInit, OnDestroy {
   }
 
   openCreateForm(): void {
+    // Open admin create modal with cleared form and initial data
     if (!this.isAuthenticated) {
       this.showToast('warning', 'Veuillez vous connecter pour créer un atelier');
       this.navigateToLogin();
@@ -508,6 +527,7 @@ export class AteliersComponent implements OnInit, OnDestroy {
   }
 
   openEditForm(atelier: Atelier): void {
+    // Open admin edit modal, pre-filling form fields with selected atelier
     if (!this.isAuthenticated) {
       this.showToast('warning', 'Veuillez vous connecter pour modifier un atelier');
       this.navigateToLogin();
@@ -538,6 +558,7 @@ export class AteliersComponent implements OnInit, OnDestroy {
   }
 
   submitForm(): void {
+    // Validate and submit admin create/edit form to backend
     if (this.atelierForm.invalid) {
       Object.keys(this.atelierForm.controls).forEach(key => {
         this.atelierForm.get(key)?.markAsTouched();
@@ -700,6 +721,7 @@ export class AteliersComponent implements OnInit, OnDestroy {
   }
 
   onFileSelected(event: any): void {
+    // Handle image file selection and preview for admin modal
     const file = event.target.files[0];
     if (file && file.type.startsWith('image/')) {
       this.selectedFile = file;
@@ -713,11 +735,13 @@ export class AteliersComponent implements OnInit, OnDestroy {
   }
 
   removeImage(): void {
+    // Remove selected image from admin modal
     this.selectedFile = null;
     this.imagePreview = null;
   }
 
   private filterCoachesByCategory(category: string): void {
+    // Filter the coaches list by normalized specialty matching selected category
     if (!category) {
       // No category selected: show all coaches
       this.filteredCoaches = [...this.coaches];
@@ -736,6 +760,7 @@ export class AteliersComponent implements OnInit, OnDestroy {
   }
 
   private normalize(value: string): string {
+    // Normalize strings for robust comparisons (diacritics, punctuation, case)
     return (value || '')
       .toString()
       .normalize('NFD')
@@ -746,6 +771,7 @@ export class AteliersComponent implements OnInit, OnDestroy {
 
   // (Removed legacy local reservation helpers)
 
+  // ========================= UI Helpers ========================
   onImageError(event: any, atelier: Atelier): void {
     const fallbackSvg = 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="600" height="400"><rect fill="#f5f5f5" width="600" height="400"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="24" fill="#999">Atelier</text></svg>');
     event.target.src = this.getImageUrlByCategorie(atelier.categorie) || fallbackSvg;
@@ -839,7 +865,9 @@ export class AteliersComponent implements OnInit, OnDestroy {
     }
   }
 
+  // ====================== Coach Lookup ======================
   private loadCoachDetails(coachId: number): void {
+    // Try to hydrate selectedAtelier.coach from cached coaches or backend
     console.log('Loading coach details for ID:', coachId);
     console.log('Available coaches:', this.coaches);
     
@@ -859,6 +887,7 @@ export class AteliersComponent implements OnInit, OnDestroy {
   }
 
   private loadCoachFromBackend(coachId: number): void {
+    // Create a temporary coach label and attempt to fetch full details
     console.log('Attempting to load coach from backend, ID:', coachId);
     
     // Try to find coach in the loaded coaches list first
@@ -888,6 +917,7 @@ export class AteliersComponent implements OnInit, OnDestroy {
   }
 
   private loadCoachDetailsFromService(coachId: number): void {
+    // Attempt to fetch coach details using CoachService if not cached
     console.log('Loading coach details from service for ID:', coachId);
     if (!coachId) return;
 
@@ -904,18 +934,20 @@ export class AteliersComponent implements OnInit, OnDestroy {
       this.coachService.getById(coachId).subscribe({
         next: coach => {
           if (this.selectedAtelier) {
-            this.selectedAtelier.coach = coach;
+        this.selectedAtelier.coach = coach;
             console.log('Coach details loaded from backend:', coach);
-          }
+      }
         },
         error: err => {
           console.log('Failed to load coach from backend:', err);
-        }
+    }
       })
     );
   }
 
+  // Reservation
   openReservationModal(atelier: Atelier): void {
+    // Open reservation modal for clients; prefill date and load coach display
     if (!this.isAuthenticated) {
       this.showToast('warning', 'Veuillez vous connecter pour réserver un atelier');
       this.navigateToLogin();
@@ -994,6 +1026,7 @@ export class AteliersComponent implements OnInit, OnDestroy {
   }
 
   closeReservationModal(): void {
+    // Close reservation modal and reset transient fields/warnings
     this.showReservationModal = false;
     this.selectedAtelier = null;
     this.selectedDate = '';
@@ -1002,6 +1035,7 @@ export class AteliersComponent implements OnInit, OnDestroy {
   }
 
   onDateChange(): void {
+    // Debug log for date changes in reservation modal
     console.log('Date sélectionnée:', this.reservationDate);
   }
 
@@ -1011,6 +1045,7 @@ export class AteliersComponent implements OnInit, OnDestroy {
     }
   }
 createReservation(): void {
+  // Validate and create a reservation for the current client and selected atelier
   if (!this.selectedAtelier) return;
   // Empêcher les double-clics
   if (this.isCreatingReservation) return;
@@ -1101,16 +1136,19 @@ createReservation(): void {
 
   // Confirmation modal controls
   closeReservationConfirmation(): void {
+    // Close the post-reservation confirmation dialog
     this.showReservationConfirmation = false;
     this.reservationConfirmation = null;
   }
 
   // --- Duplicate reservation helpers ---
   private makeKey(atelierId: number, clientId: number): string {
+    // Build a unique key for (client, atelier) used to track duplicates locally
     return `${clientId}::${atelierId}`;
   }
 
   private loadLocalReservationKeys(): void {
+    // Load previously saved reservation keys from localStorage into memory
     try {
       const raw = localStorage.getItem('reservationKeys');
       if (raw) {
@@ -1121,18 +1159,21 @@ createReservation(): void {
   }
 
   private persistLocalReservationKeys(): void {
+    // Persist current reservation keys to localStorage
     try {
       localStorage.setItem('reservationKeys', JSON.stringify(Array.from(this.reservationKeys)));
     } catch {}
   }
 
   private recordLocalReservation(atelierId: number, clientId: number): void {
+    // Save a reservation key so we can warn the client on future attempts
     const key = this.makeKey(atelierId, clientId);
     this.reservationKeys.add(key);
     this.persistLocalReservationKeys();
   }
 
   isAtelierAlreadyReservedByClient(atelierId: number, clientId: number): boolean {
+    // Check local cache to warn client if they already reserved this atelier
     return this.reservationKeys.has(this.makeKey(atelierId, clientId));
-  }
+}
 }
